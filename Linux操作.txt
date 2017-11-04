@@ -31,8 +31,10 @@ linux命令
 		*useradd [参数] 用户名							添加用户
 			参数：-g 组编号/组名称
 				  -u 用户编号（自定义，必须唯一）
-				  -d 家目录（自己指定该用户的家目录位置）
+				  -d 家目录（指定该用户的家目录位置）
 				  -s 登陆时运行的shell脚本路径
+				  -M 不创建账户家目录，一般结合-s使用
+				  -e 设置账户的实效日期，格式为YYYY-MM-DD
 			例如：
 				useradd -s /sbin/nologin abc    添加abc用户，但禁止abc用户登陆系统
 				useradd xiaoming 				添加xiaoming用户
@@ -40,12 +42,20 @@ linux命令
 				useradd -g 502 xiaohong			添加xiaohong用户，同时把xiaohong用户分配到组别编号为502的组
 				useradd -g 503 -u 600 -d /home/xueyou xueyou
 					创建xueyou用户，指定组编号为503，自身编号为600，家目录位置在/home/xueyou
+				useradd -c administrator -d /home/admin -e 2017-11-5 -g root -G bin,adm,mail admin
+					创建普通账户，名称为admin，全名为administrator，账户家目录为/home/admin，账户
+				失效时间日志为2017年11月5日，账户基本组为root,附加组为bin、adm、mail
+				useradd -s /sbin/nologin -M user2 
+					创建无法登陆系统且没有家目录的用户user2
 		
 		*usermod 参数 用户名					修改用户信息
 			参数：-u 新编号 			修改用户编号
 				  -g 组编号/组名称 		修改用户组别
 				  -d 新家目录			修改用户家目录
 				  -l 新用户名			修改用户名
+				  -e YYYY-MM-DD			修改账户失效日期
+				  -s 登陆shell			修改账户登陆shell
+				  
 			例如：
 				usermod -g admin xiaoming 				修改xiaoming的组为admin
 				usermod -d /var/xiaoming xiaoming 		修改xiaoming的家目录位置为/var/xiaoming
@@ -58,7 +68,15 @@ linux命令
 			例如：
 				userdel -r xiaoming
 		
-		*passwd [用户名]						修改密码[不输入用户名的话，则修改当前用户的密码。输入用户名的话，则修改该用户名的密码]
+		*passwd [参数] [用户名]						修改密码[不输入用户名的话，则修改当前用户的密码。输入用户名的话，则修改该用户名的密码]
+			-l	锁定用户，仅root可使用此选项
+			--stdin	从文件或管道读取密码
+			-u	解锁用户
+			-d  快速清空账户密码，仅root可使用此选项
+			-f  强制操作
+			例如：
+				echo "qwe789" | passwd --stdin test		设置test用户的密码为 qwe789
+				passwd -d test							清空test账户的密码，无密码可登陆系统
 		
 		logout									注销
 		exit									退出
@@ -79,7 +97,6 @@ linux命令
 		groupadd 组名称					添加组
 			例如：
 				groupadd xiaoming 			添加xiaoming组
-				注：用户组的管理文件位置存放于：/etc/group
 		
 		groupmod 参数 用户组名			编辑用户组
 			参数：-g 新组id 组名称
@@ -115,7 +132,16 @@ linux命令
 				chmod -/+rw abc				: 给所有用户减少或者添加 读写权限
 			注意：如果操作的对象是文件夹，根据情况加上-r参数，表示递归赋予权限
 			读权限是最基本的，要想写入或者执行操作，则必须拥有读权限。要么所有权限都不给。
-			
+		
+		id 用户名						显示用户及组信息
+		
+		gpasswd [参数 账户] 组名		为组设置密码（一般为组管理员密码）
+			例如：
+				gpasswd admin 			设置admin组密码
+				gpasswd -A mail admin	将mail设置为admin组的管理员
+		
+		注：用户组的管理文件位置存放于：/etc/group，组账户密码文件存放于：/etc/gshadow
+		
 		
 	四，运行级别命令
 		init [012356]
@@ -145,19 +171,25 @@ linux命令
 	五，目录操作命令
 		pwd							显示当前工作目录
 		cd 文件路径					切换目录
-		ls [-a[l][h]] [文件路径]	列出文件和目录  
+		ls 参数 [文件路径]			列出文件和目录  
 			-i:查看文件索引号
 			-a:显示隐藏文件 
-			-l:显示长列表格式
-			-h:查看文件所有者、组
-			-al 显示所有文件(包括隐藏文件),并以长列表格式显示
+			-l:长格式显示文档的详细信息
+			-h:人性化显示容量信息
+			-u:显示文件或目录最后被访问的时间
+			-al:显示所有文件(包括隐藏文件),并以长列表格式显示
+			-t:以修改时间排序，ls命令默认是按文件名称排序的
 		
 		mkdir -p 文件夹名			建立目录（-P 建立多级目录）
 		rmdir						删除空目录
 		
 	六，文件操作命令
 		touch 文件名				建立空文件
-		cp file1 file2				拷贝文件
+		cp 参数 file1 file2				拷贝文件
+			-r		递归复制子目录
+			-f		强制覆盖同名文件
+			-a		复制时，保留源文档的所有属性
+			
 			例如：
 				cp index.php /home/admin/
 				cp -r dir1 dir2              -r  表示递归复制子目录信息
@@ -168,11 +200,18 @@ linux命令
 				mv index.php indes.php
 				mv index.php /home/admin/indes.php
 				
-		rm [-r[f]] dir/file			删除文件和目录
+		rm [参数] dir/file			删除文件和目录
+			-i  删除前，提示是否删除
+			-r	递归删除
+			-f	强制删除，不提示
 			例如：
 				rm -rf *			删除所有内容（包括目录和文件） r递归 f强制
 		
-		du -h 文件/目录				查看文件/目录占据磁盘的大小
+		du [参数] 文件/目录				查看文件/目录占据磁盘的大小
+			-h	人性化显示容量信息
+			-a	查看所有目录以及文件的容量信息
+			-s	仅显示容量
+		
 		
 		ln -s 源目标路径 软链接 	建立软链接
 			例如：
@@ -222,19 +261,19 @@ linux命令
 	
 	
 	七，文件内容操作命令
-		cat 文件名						打印文件内容输出到终端
+		cat [参数] 文件名						打印文件内容输出到终端
+			-b 显示行号（不包括空白行）
+			-n 显示所有行号
+		
 		more 文件名						通过敲回车方式逐行查看文件的各行内容
 		less 文件名						通过上下左右键开查看文件的内容（下一页使用空格/PageDown，上一页使用Ctrl+pageUP）
 		head -n 文件名					查看文件的前n行内容
 		tail -n 文件名					查看文件的末尾n行内容
-		wc 文件名						查看文件的行数
+		wc [参数] 文件名				依次显示文件的行数，单词数，字节数
+			-w 	显示文件单词统计信息
+			-l	显示文件行数
+			-c	显示文件字节信息
 		
-		grep [-n] "查询内容" 文件名		在文件中查询内容  -n:显示行数
-			例如：
-				grep -n "12" /root/abc.txt			查找“12”字符串出现在abc文件的哪几行
-				grep -n "12" /root/abc.txt /home/   在home目录下和abc文件中，查找“12”字符串出现的位置和文件名
-				grep -n "12" /root/abc.txt /home/*  在home目录下所有文件和abc文件中，查找“12”字符串出现的位置和文件名
-				
 		|								管道命令
 			例如：ls -l /home | more			把ls查询的结果，进行分页
 				  grep sbin /etc/passwd | wc	查询sbin出现的次数
@@ -267,12 +306,21 @@ linux命令
 			7，根据文件类型查找
 				find / -type f -name passwd	: 查找passwd文件
 				find / -type d -name paaswd : 查找passwd目录
-			
+			8，按照文档名称查找，且不区分大小写
+				find / -iname "Jacob"
+			9，并且	
+				find / -size +1M -a -type f	: 查找计算机中的所有大于1MB的文件
+			10，或者
+				find / -size 1M -o -size 2M -a type f : 查找计算中所有等于1M或者2M的文件
+		
 		
 	八，vim命令	（vi和vim是同一个模型的命令，vim是vi命令的增强版）
 		第一种方式：vim 文件名				打开一个文件
 		第二种方式：vim +数字 文件名		打开一个文件（打开文件之后快速的将光标定位到指定的行）
 		第三种方式：vim +/字符串 文件名		打开一个文件（打开文件，之后高亮显示/后的字符串）
+			例如：vim +/nologin /etc/passwd
+				  vim +20 /etc/passwd
+			
 			
 			在文件内容的操作：
 				1，进入编辑模式
@@ -331,6 +379,7 @@ linux命令
 					L		屏幕尾部(不翻屏)
 				
 				7，替换字符串命令：	
+					rx:将光标当前字符替换为x(x为任意键盘单个输入)
 					:s/需要替换的字符串/替换成的字符串		只替换当前光标所在行的第一处
 					:s/需要替换的字符串/替换成的字符串/g	只替换当前光标所在行全部符合条件的地方
 					:%s/需要替换的字符串/替换成的字符串		替换当前文件的每一行的第一个符合条件的字符串
@@ -338,7 +387,7 @@ linux命令
 					:%s/需要替换的字符串/替换成的字符串/gc	每次替换要求确认
 				
 				8，保存退出命令
-					:w			保存
+					:w [文件名]	保存
 					:q			退出
 					ZZ|:wq|:x 	保存退出
 					ZQ|:q!		不保存退出
@@ -356,6 +405,23 @@ linux命令
 				10，相关快捷操作
 					J 			合并上下两行
 					r			单个字符替换
+				
+				11，多窗口编辑
+					:split		水平分割窗口
+					:vplit		垂直分割窗口
+					:close		关闭当前窗口
+					Ctrl+w+h	跳转左边窗口
+					Ctrl+w+l	跳转右边窗口
+					Ctrl+w+j	跳转上边窗口
+					Ctrl+w+k	跳转下边窗口
+					
+				12，执行shell命令
+					使用vim编辑文档的时候，想执行一条shell命令而不像退出vim编辑器，可以通过：
+				!{命令}的方式实现。
+					例如：:!ls		查看当前目录列表，按回车返回vim编辑器
+					
+				13，自动补齐单词
+					若需要补全的单词，再上下文中已出现，则可以使用Ctrl+N补全。
 				
 				注：如果需要在搜索的高亮结果中进行光标的快速跳转，可以按下键盘上的“n”进行
 		向下跳转，“N”向上进行跳转
@@ -398,12 +464,28 @@ linux命令
 	
 	
 	十，分区管理命令
-		mount [-参数] [设备名称] [挂载点(保存目录)] 	挂载命令
-			特别说明：在挂载光驱时,可直接使用 mount /mnt/cdrom
-			
-		umount [挂载点 或者 挂载目录]					卸载命令
-			例如：umount /mnt/cdrom(挂载点)
-				  umount /dev/sr0（硬件：挂载目录）						
+		挂载：
+			第一种方式：（重启失效）
+				mount [-参数] [设备名称] [挂载点(保存目录)] 	挂载命令
+					mount -a   									# 挂载fstab文件中尚未挂载的文件系统
+					mount /dev/cdrom /mnt/cdrom					# 将cdrom挂载到/mnt/cdrom目录
+					特别说明：在挂载光驱时,可直接使用 mount /mnt/cdrom
+					
+				umount [挂载点 或者 挂载目录]					卸载命令
+					例如：umount /mnt/cdrom(挂载点)
+						  umount /dev/sr0（硬件：挂载目录）
+						  
+			第二种方式：（修改配置文件，重启仍有效）
+				编辑 /etc/fstab 文件
+				该文件共计六列：
+				第一列：设备名称或者设备标签
+				第二列：挂载目录
+				第三列：文件系统类型
+				第四列：挂载属性
+				第五列：指定该文件系统使用使用dump备份（0表示不备份，1表示每天备份）
+				第六列：指定该文件系统在开机后使用fsck程序进行磁盘检测的顺序（根文
+				件系统需要指定为1，其他文件系统一般为2，如果为0，则表示不需要进行磁盘检测）
+		
 		
 		eject											弹出光盘（卸载挂载点）
 		
@@ -491,6 +573,10 @@ linux命令
 		date -s "时间格式"
 			例如:
 				date -s "2015-07-08 15:25:34"
+		hwclock -w				将更新写入CMOS时间，通常结合date -s 使用
+			如：date -s '20115-08-25 15:30:06'
+				hwclock -w		把新设置的时间写入CMOS里
+		
 		cal 3 2002				查看月历。查看2002年3月的月历
 		cal 2008				查看2008年的月历
 	
@@ -504,6 +590,13 @@ linux命令
 	
 	
 	十五，压缩和解压命令
+		gzip [参数] 文件名		解压缩文件
+			-d 解压
+		bzip2 [参数] 文件名		解压缩文件
+			-d 解压
+		注：gzip和bzip2不可以直接对目录做打包压缩操作。
+			
+	
 		zip 					 压缩文件
 			例如：
 				zip file.zip *   					把“当期文件夹内所有文件”压缩成file.zip文件
@@ -549,7 +642,9 @@ linux命令
 				-v: 详细报告tar处理的文件信息。如无此选项，tar不报告文件信息。
 				-w: 每一步都要求确认。
 				-z: 用gzip来压缩/解压缩文件，加上该选项后可以将档案文件进行压缩，但还原时也一定要使用该选项进行解压缩。
-				
+				-C：指定解压路径
+				-j:	打包后通过bzip2格式压缩
+				--remove-file: 打包后删除源文件
 				
 			　　下面的参数-f是必须的
 			　　-f: 使用档案名字，切记，这个参数是最后一个参数，后面只能接档案名。
@@ -596,14 +691,86 @@ linux命令
 				　　7、*.tar.Z 用tar –xZf 解压
 				　　8、*.rar 用 unrar e解压
 				　　9、*.zip 用 unzip 解压
+					10、*.tar.xz 用 tar -xJ 解压
 		
 		
 		十六：特殊指令
 			who am i					显示当前登陆的用户
 			which 命令					显示命令所在的位置
 				例如：which ls	显示ls命令程序所在的位置
+			echo [参数] 字符串
+				-n 不换行输出，默认换行输出
+			man 命令					显示命令的帮助信息
+			info 命令					显示命令的帮助信息
+			命令 --help					显示更简洁的命令帮助信息
 		
 		
+		十七：grep命令
+		
+		grep 参数 "查询内容" 数据源(或文件)		在数据源或文件中进行搜索
+			参数解析：
+				-n			显示行号
+				-v			反转输出结果
+				-i			忽略大小写
+				-A/B n		输出匹配结果的字符串前/字符串后显示n行字符
+				-C n		输出匹配结果的前后n行字符
+				-c			统计结果行数
+				-r			递归搜索
+				-w			精确搜索。只搜索单词，例如："other"
+				-E			开启正则表达式匹配功能
+				--color		显示颜色
+				
+		zgrep 参数 "查询内容" 压缩文件	在Gzip压缩文件中搜索
+
+		egrep 参数 正则表达式 数据源(或文件)	使用正则表达式搜索结果
+			
+			例如：
+				grep -n "12" /root/abc.txt			查找“12”字符串出现在abc文件的哪几行
+				grep -n "12" /root/abc.txt /home/   在home目录下和abc文件中，查找“12”字符串出现的位置和文件名
+				grep -n "12" /root/abc.txt /home/*  在home目录下所有文件和abc文件中，查找“12”字符串出现的位置和文件名
+				grep -v "#" /etc/httpd/conf/httpd.conf 
+		
+	
+		十八，ACL访问控制权限设置
+			描述：正对单一用户设置文档的访问权限。
+			
+			getfacl 文件/文件夹				查看acl访问权限
+			setfacl [参数] [{-m|-x}acl条目] 文件或目录
+				-b	删除所有的ACL条目
+				-m	添加ACL条目
+				-x	删除指定的ACL条目
+				-R	递归处理所有的子文件与目录
+				例如：
+					setfacl -m u:user1:rw test.txt
+						添加ACL条目，使用户user1对test.txt文件可读可写
+					setfacl -m g:user1:r test.txt
+						添加ACL条目，使user1组对test.txt文件可读
+					setfacl -x g:user1 test.txt
+						删除user1组的ACL条目
+					setfacl -x u:user1 test.txt
+						删除user1用户的ACL条目
+					seffacl -d test.txt
+						删除所有的附加ACL条目
+	
+	
+linux通过systemctl管理服务
+	如果是通过RPM或者YUM安装，则应用程序一般会在/usr/lib/systemd/system/目录下创建
+对应的配置文件，我们可以通过系统提供的systemctl命令来管理这些服务。
+	例如：
+		systemctl start sshd		# 开启sshd服务
+		systemctl stop sshd			# 关闭sshd服务
+		systemctl restart sshd		# 重启sshd服务
+		systemctl status sshd		# 查看sshd服务状态
+		systemctl enable sshd		# 设置服务默认为开机启动服务
+		systemctl disable sshd		# 设置服务默认为开机禁用服务
+	
+	有时修改了服务的配置后，还可以通过reload参数来重新加载配置文件，甚至当你修改完配置文件后
+不知道新的设置是否正确，或者重启服务后是否会导致服务无法启动，可以使用condrestart选项，此时，
+系统会测试新的配置文件是否有问题，没问题的情况下才会重启，否则不会使用新的配置来重启服务
+	例如：
+		systemctl reload sshd
+		systemctl condrestart sshd
+	
 	
 linux	目录结构（重要目录）
 	/			根目录
@@ -680,10 +847,76 @@ linux任务调度命令
 
 		
 		
-linux分区
-		linux分区有主分区和扩展分区组成，并且主分区+扩展分区个数不能超过4。而扩展分区必须分区后
+linux磁盘分区
+		linux传统的MBR分区方式，分区有主分区和扩展分区组成，并且主分区+扩展分区个数不能超过4。而扩展分区必须分区后
 	才能写入数据（就是说扩展分区需要再次分区），扩展分区再次分区的分区叫逻辑分区，逻辑分区数量不限。
+		fdisk -l			查看磁盘分区表
+		fdisk /dev/sd?		为某块吸盘进行分区
+			进入分区命令模式：
+				输入 m 获得帮助
+				a		切换分区启动标记
+				b		编辑bsd磁盘标签
+				c		切换dos兼容模式
+				d		删除分区
+				l		显示分区类型
+				m		显示帮组菜单
+				n		新建分区
+				o		创建新的空分区表
+				p		显示分区表信息
+				q		不保存退出
+				s		创建新的Sun磁盘标签
+				t		修改分区id,可以通过l查看id
+				u		修改容量单位，磁柱或扇区
+				v		检验分区表
+				w		保存并退出
+				x		扩展功能
+		
+			接下来，根据实际情况输入相应字母，根据提示操作分区即可。
+			最后保存退出，使用 partprobe /dev/sd? 让内核立即读取新的分区表，这样无需重新启动，即可
+		识别新创建的分区
+		
+		
+		MBR分区有特别多的限制。如，最多4个主分区，无法创建大于2TB的分区等....
+		使用心得GPT方式创建分区则不受这样的限制。
+		fidsk命令不支持GPT分区方式。
+		需要使用新的分区工具：parted
+		命令格式：parted [选项] [磁盘[命令]]
+		注意：改变分区方式后，原有磁盘中的数据将会完全丢失！！！！！
+		
+		例如：
+			1，修改分区类型
+			parted /dev/sdc mklabel gpt		修改分区表格式
+				提示磁盘数据将丢失，输入yes完成修改
+			
+			2，查看分区表信息
+			parted /dev/sdc print			查看系统分区表信息
+		
+			3，创建与删除分区
+				创建新的分区需要使用parted命令的mkpart指令，语法格式如下：
+				parted [磁盘] mkpart 分区类型 文件系统类型 开始 结束
+				其中，mkpart指令为创建新的分区，分区类型有：primary,logical,extended三种，文件系统类型
+			有：fat16,fat32,ext2,ext3,liunx-swap等，开始与结束标记区分开始与结束的位置（默认单位MB）
+			例如：
+				parted /dev/sdc mkpart primary ext3 1 2G
+				# 创建一个格式为ext3的主分区，从磁盘的第1MB开始分区，到2GB的位置（大小为2GB的主分区）
+				parted /dev/sdc mkpart primary ext3 2G 4G
+				# 创建一个容量为2GB的分区（从磁盘的第2个GB位置开始分区，到第4个GB的位置结束）
+				parted /dev/sdc rm 2
+				# 删除id为2的分区
+				
+			更多parted命令，请参考手册。man parted
+		
 
+		分区的格式化：
+			在磁盘进行分区后，需要将分区格式化。
+			在CentOS7系统默认的文件系统格式为xfs格式
+				mkfs.xfs /dev/sdc1		# 将/dev/sdc1格式化为xfs格式
+			对于交换分区，需要单独使用mkswap命令实现格式化的工作
+				mkswap /dev/sdc2		# 将/dev/sdc1格式化为swap分区
+
+
+
+		
 
 	
 tcp/ip基础 -- ip地址与包的路由传递
@@ -1358,110 +1591,337 @@ linux设置服务开启启动：
 		service vsftpd start
 		保存退出，重新登录即可
 		
+
+linux添加环境变量的三种方法：
+	在Linux CentOS系统上安装完php和MySQL后，为了使用方便，需要将php和mysql命令加到系统命令中，如果在没有添加到环境变量之前，
+执行“php -v”命令查看当前php版本信息时时，则会提示命令不存在的错误，下面我们详细介绍一下在linux下将php和mysql加入到环境变量中的方法
+（假设php和mysql分别安装在/usr/local/webserver/php/和/usr/local/webserver/mysql/中）。
+		方法一：直接运行命令export PATH=$PATH:/usr/local/webserver/php/bin 和 export PATH=$PATH:/usr/local/webserver/mysql/bin
+				使用这种方法，只会对当前会话有效，也就是说每当登出或注销系统以后，PATH 设置就会失效，只是临时生效。
+		方法二：执行vi ~/.bash_profile修改文件中PATH一行，将/usr/local/webserver/php/bin 和 /usr/local/webserver/mysql/bin 加入到PATH=$PATH:$HOME/bin一行之后
+				这种方法只对当前登录用户生效
+		方法三：修改/etc/profile文件使其永久性生效，并对所有系统用户生效，在文件末尾加上如下两行代码
+				PATH=$PATH:/usr/local/webserver/php/bin:/usr/local/webserver/mysql/bin
+				export PATH
+	最后：执行 命令source /etc/profile或 执行点命令 ./profile使其修改生效，执行完可通过echo $PATH命令查看是否添加成功。
+		
 		
 课外知识：
 	建议读读 理查德·史蒂文斯 写的书籍
-		  
-	./configure --prefix=/usr/local/httpd24 --enable-modules=all --enable-mods-shared=all --enable-so --with-apr=/usr/local/apr --with-apr-util=/usr/local/apr-util --with-pcre=/usr/local/pcre --with-included-apr
+	
+
+
+计划任务
+	linux准备了两种计划任务。at 和 cron
+	
+	一，at 一次性计划任务
+		使用at制定一次性计划任务前需要确保atd服务是开启的，否则计划任务不会被执行，使用
+	systemctl start atd 开启服务，并使用systemctl enable atd 确保该服务开机启动。
+	
+		at命令的作用和用法如下：
+		描述：在制定的时间执行特定命令
+		用法：at 时间
+		选项: 	-m		当计划任务执行结束后发送邮件给用户
+				-l		查看用户计划任务
+				-d		删除用户计划任务
+				-c		查看at计划任务具体内容
+				
+		示例：
+			at 23:11							# 指定将在当天23点11分执行的计划任务
+			at> tar -cjf log.tar.bz2 /var/log	# 计划任务内容
+			at> shutdown -h now					# 计划任务内容
+			:x									# 退出保存
+			job 1 at 2016-01-24 23:11			# 系统提示有编号为1的计划任务内容
+			at -l								# 查看计划任务
+			at -c 1								# 查看编号为1的计划任务的具体内容
+			at -d 1								# 删除编号为1的计划任务
 		
-		./configure --prefix=/usr/local/httpd24 \
-		--enable-modules=all \
-		--enable-mods-shared=all \
-		--enable-so \
-		--with-apr=/usr/local/apr \
-		--with-apr-util=/usr/local/apr-util \
-		--with-pcre=/usr/local/pcre
+		at 命令可以使用的时间格式有很多：
+			at 小时:分钟		# 默认代表当天时间
+			at 4pm + 3 days		# 代表3天以后下午4点执行计划任务
+			at 12:00 2014-12-12	# 指定年月日及日期的计划任务
+		具体可以参考:man at
+
 		
-		--prefix  				安装路径
-		--enable-modules 		指定开启的功能模块
-		--enable-mods-shared 	把全部的功能模块代码内容都编译到“apache本身软件”内部（apache本身软件会变大，但是在调用相关模块的时候速度会很快）
-								相对应类型：static静态类型：apache内部不要编译许多模块代码，其他模块diamagnetic都独立存在，需要什么模块就立即include引入。（apache软件本身会非常小巧，其运行速度会很快）
-		--enable-so				可以识别so后缀的模块文件	  
+	二，cron周期性的计划任务
+		使用cron制定计划任务前需要保证crond服务是开启的，否则计划任务不会被执行，使用
+	systemctl start crond 开启服务，并使用systemctl enable crond 确保该服务开机启动。
+		
+		crontab命令的作用和用法如下：
+		描述：为每个用户维护周期性的计划任务文件
+		用法: crontab [-u 用户] [-l|-r|-e]
+		选项：	-u		指定计划任务的用户，默认为当前用户
+				-l		查看计划任务
+				-r		删除计划任务
+				-e		编辑计划任务
+				-i		使用-r删除计划任务时，要求用户确认删除
+	
+		用户的cron计划任务文件格式分为6列,使用24小时制：
+			第一列： 	分			00~59
+			第二列：	时			00~23
+			第三列：	日			1~31
+			第四列：	月			1~12
+			第五列：	周			0~7(其中0和7表示周日)
+			第六列：	命令		
+		如果需要指定的是时间段，可以使用横杠(-)表示一段连续的时间，使用逗号(,)表示
+	若个不连续的时间，使用星号(*)表示所有的时间，使用除号(/)表示间隔时间。
+	
+		例如：
+			crontab -e											# 为当前用户设置计划任务
+			23 23 * * 5 tar -cjf log.tar.bz2 /var/log			# 每周五晚23点23分执行日志备份
+			00 */3 * * * who									# 每三小时的整点检查用户登录情况
+			00 10 * * 3,5 free | mail -s "Men" admin@xx.com		# 每周三，周五10点将系统内存信息发给自己的邮箱
+			# 计划任务编辑完成后，退出方式与vim一样。
+			
+		其实，CentOS系统自定义了很多计划任务脚本，分别存放在/etc/下的
+		cron.hourly(每小时执行)、cron.daily(每天执行)、cron.weekly(每周执行),
+		根据实际情况，将可要执行的脚本放入对应的目录下即可。
+		
+	三，计划任务权限
+		为了控制用户随意定义自己的计划任务，管理员可以进行ACL访问控制。
+		at计划任务的控制文件分别为 /etc/at.allow 和 /etc/at.deny , 默认 at.allow 不存在。
+		cron计划任务的控制文件分别为 /etc/cron.allow 和 /etc/cron.deny , 默认 cron.allow 不存在。
+		
+		在这些控制文件中仅需要写入用户名即可，格式为一行一个用户名，当allow文件存在时，仅在allow
+	文件中出现的用户可以使用对应的计划任务。如果allow与deny文件同事存在内容一样的用户，则仅出现
+	在allow中的用户可以使用计划任务。如果没有allow文件而仅有deny文件，则所有出现在deny中的用户无
+	法使用计划任务，其他用户均可使用计划任务。
+		
+		
 
-./configure --prefix=/usr/local/gd \
---with-jpeg=/usr/local/jpeg/ \
---with-png=/usr/local/libpng/ \
---with-freetype=/usr/local/freetype/ \
---with-zlib
+性能监控
+	监控CPU使用情况：
+		Shell># uptime
+		14:34:32 up 45 min,  2 users,  load average: 0.01, 0.09, 0.11
+		从上面信息可以看出，当前系统时间为14点34分，系统已经运行了45分钟，
+	当前有两个用户在登陆，CPU负载分别显示一分钟，五分钟和十五分钟的负载情况。
+		需要说明的是，这里的负载表示单位时间段内CPU等待队列中平均有多少进程在等待，
+	等待的进程个数越多，说明CPU越忙。
+	
+	监控内存及交换分区使用情况：
+		命令：free [-b|-k|-m]
+		
+	监测磁盘使用情况：
+		命令：df [选项]
+		选项：-h	人性化方式显示容量信息
+			  -i	显示磁盘inode使用量信息
+			  -T	显示文件系统类型
+	
+	监控网络使用情况：
+		命令：ip
+			例如：ip a s 						# 查看网卡信息
+				  ip -s link show eno16777736  	# 查看网卡流量信息
+				  
+		命令：netstat [选项]
+		选项：-s	显示各种协议数据统计信息
+			  -n	使用数字形式的IP,端口号，用户ID替代主机，协议，用户等名称信息
+			  -p	显示进程名称及对应进程ID号
+			  -l	仅显示正在监听的sockets接口信息
+			  -u	查看udp链接信息
+			  -t	查看tcp链接信息
+			例如：	netstat -nultp
+					netstat -s
+			
+	监控进程使用情况
+		命令：ps
+			例如：
+				标准语法格式：
+				ps -e 	# 查看所有的进程信息
+				ps -ef	# 全格式显示进程信息
+
+				BSD语法格式：
+				ps -ax
+				ps -axu
+
+		返回值解释：
+			UID/USER		进程的执行用户
+			PID				进程的唯一编号
+			PPID			父进程ID编号
+			%CPU			进程的CPU占用率
+			%MEM			进程的内存占用率
+			VSZ				进程所使用的虚拟内存大小（单位KB）
+			RSS				进程所使用的真实内存大小（单位KB）
+			TIY				终端
+			STIME/START		进程启动时间
+			STAT			进程状态
+								D：不可终端的进程
+								R：正在运行的进程
+								S：正在睡眠的进程
+								T：停止或被追踪的进程
+								X：死掉的进程
+								Z：僵尸进程
+			TIME			进程占用CPU的总时间
+			CMD/COMMAND		进程命令
+
+		命令：top [选项]
+		选项：-d 	#top刷新间隔，默认为3秒
+			  -p	#查看指定PID的进程信息
 
 
 
-cmake . \
--DCMAKE_INSTALL_PREFIX=/usr/local/mysql \
--DMYSQL_DATADIR=/usr/local/mysql/data \
--DWITH_BOOST=/usr/local/boost_1_59_0 \
--DSYSCONFDIR=/etc \
--DENABLED_LOCAL_INFILE=1 \
--DDEFAULT_CHARSET=utf8 \
--DDEFAULT_COLLATION=utf8_general_ci \
--DEXTRA_CHARSETS=all
+网络配置
+	命令配置：（重启失效）
+		一，网络接口参数配置
+			命令：ifconfig interface 选项 | 地址 
+			例如：
+				ifconfig eno16777736 192.168.0.31 netmask 255.255.255.0
+					# 设置eno16777736网卡接口IP地址为192.168.0.31，子网掩码为255.255.255.0
+				ifconfig eno16777736
+					# 查看eno16777736网卡接口信息
+				ifconfig eno16777736 down
+					# 关闭eno16777736网卡接口
+				ifconfig eno16777736 up
+					# 开启eno16777736网卡接口
+				ifconfig
+					# 查看当前主机的所有网卡信息
 
+		二，主机名参数配置
+			命令：hostnamectl [选项]
+			例如：
+				hostnamectl status
+					# 查看主机名及主机信息
+				hostnamectl	set-hostname centos.example.com
+					# 设置主机名称
 
-./mysqld --initialize-insecure \
---user=mysql \
---basedir=/usr/local/mysql \
---datadir=/usr/local/mysql/data
-
-
-./bin/mysql_ssl_rsa_setup
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+		三，路由参数配置
+			描述：显示或设置静态IP路由表
+			命令：route [选项]	# 查看路由信息
+				  route add		# 添加路由表记录
+				  route del		# 删除路由表记录
+				  
+			例如：
+				route			# 查看当前路由表
+				route -e		# 使用数字地址替代主机名称
+				route add default gw 192.168.0.254
+					# 添加默认网关为 192.168.0.254
+				route add -net 172.16.0.0/16 gw 192.168.0.254
+					# 添加指定网段的网关
+				route add -net 192.56.76.0 netmask 255.255.255.0 dev eno16777736
+					# 添加路由记录，指定通过eno16777736网卡传输到192.56.76.0网段的数据
+				route del default gw 192.168.0.254
+					# 删除默认网关
+				route del -net 172.16.0.0/16
+					# 删除指定网段的网关记录
 		  
 		  
+	文件配置：（重启仍有效）
+		一，网络接口参数配置文件
+			位置：/etc/sysconfig/network-scripts/ifcfg-<iface>，其中<iface>为网卡名称，例如：eno16777736
+			文件参数解释：
+				DEVICE			设备名称
+				TYPE			设备类型
+				BOOTPROTO		启动协议，node,dhcp,static
+				HWADDR			硬件地址
+				ONBOOT			开机是否启动该网卡，对虚拟接口无效，yes|no
+				IPADDR			IP地址
+				PREFIX			网络为掩码个数，对虚拟接口无效
+				NETMASK			子网掩码
+				GATEWAY			默认网关
+				DNS{1,2}		DNS服务器，多个服务器使用数字标记，若DNS1，DNS2
+			  
+			设置完成后，要重新启动网卡服务才可生效：
+				Shell># systemctl restart network
 		  
+		二，主机名参数配置文件
+			位置：/etc/hostname
 		  
+		三，路由参数配置文件
+			位置：/etc/sysconfig/network-scripts/目录下，名称格式route-<iface-name>（该文件默认不存在，需要手动创建）
+			例如：
+				shell># vim /etc/sysconfig/network-scripts/route-eno16777736
+				127.16.0.0/16 via 192.168.0.200
+				shell># systemctl restart network
+			解释：
+				为eno16777736网卡指定去往127.16.0.0/16网段的网关为192.168.0.200
 		  
-		  
-		   
-		  
-		  
-		  
-		  
-		  
-		  
-		  
+
+网络故障排错常用命令：
+	1，ping 主机名或IP地址
+		当网络不通时，可以使用简单的ping命令来定位问题节点的位置。
+		顺序依次为：本地回环---》本地IP---》网关IP---》外网IP
+		
+	2，traceroute [-I] 域名或者IP地址
+		查看数据包发送到目的地，经过了多少路由转发
+		
+	3，nslookup 域名或者IP地址
+		检查本机设置的DNS服务器是否可以解析指定网址
+		
+	4，dig 域名 [MX(邮件记录)|NS(域名服务器记录)]
+		查看更多DNS记录的信息。查看包括MX(邮件记录)、NS(域名服务器记录)等信息
+		
+	5，netstat
+		查看系统开启的进程端口信息。
+		例如：
+		netstat	-an 		# 查看网络连接状态
+		netstat -nutlp 		# 查看当前系统开启端口的信息
+
+
+linux内核模块设置
+	内核模块存放位置：/lib/modules/`uname -r`/目录下
+	
+	常用命令：
+		lsmod						# 查看已加载内核模块
+			# 列出的三列信息分别为模块名称，占用内存大小，是否在被使用，如果
+		第三列为0，则该模块可以随时卸载，非0则无法执行modprobe删除模块
+
+		modprobe [-r] 模块名称		# 动态加载指定模块，指定 -r 的话，则动态卸载指定模块
+		例如：
+			modprobe ip_vs		# 动态加载ip_vs模块
+			lsmod | grep ip_vs  # 查看模块是否加载成功
+			modprobe -r ip_vs	# 动态卸载ip_vs模块
+			
+		modinfo	模块名称			# 查看模块内核信息
+		
+		注:通过modprobe方式加载的内核模块仅在当前有效，重启后失效。
+		
+		可通过修改配置文件，达到开机自动挂载指定内核模块。
+		配置文件位置：/etc/rc.d/rc.local
+		需要将modprobe命令写入该配置文件中，重启后生效。
+		例如：
+			Shell># echo "modprobe ip_vs" >> /etc/rc.d/rc.local
+			Shell># shutdown -r now		# 重启生效
+		当内核模块不需要时，则编辑该配置文件，删除对应的modprobe命令即可。
+		
+		或者 通过修改/etc/modprobe.d/目录下的相关配置文件实现。
+
+		
+	修改内核参数
+		1，临时调整内核参数
+			直接修改/proc目录下的大量文件来调整内核参数，这种调整是立刻生效的。
+			如：
+				echo "1" > /proc/sys/net/ipv4/ip_forward
+					# 开机内核路由转发功能（通过0 或者 1 设置开关）
+				echo "1" > /pro/sys/net/ipv4/icmp_echo_ignore_all
+					# 禁止所有的icmp回包（禁止其他主句ping本机）功能
+				echo "108248" > /proc/sys/fs/file-max
+					# 调整所有进程可以打开的文件总数量（当大量的用户访问网站资源时，
+				可能会因该数字过小而导致错误）
+
+				
+		2，永久调整内核参数
+			直接修改/etc/sysctl.conf文件，文件格式为“选项=值”
+			例如：
+				Shell># vim /etc/sysctl.conf
+				net.ipv4.ip_forward=1
+				net.ipv4.icmp_echo_ignore_all=1
+				fs.file-max=108248
+			注意：通过sysctl.conf文件修改的内核参数不会立刻生效，修改完成后，
+		使用sysctl -p 命令可以使这些设置立刻生效
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 		  
 		  
 		  

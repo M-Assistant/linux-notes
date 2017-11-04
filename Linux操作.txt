@@ -1,0 +1,1468 @@
+linux特点：
+	1，免费的/开源
+	2，支持多线程/多用户的操作系统
+	3，安全性好
+	4，对内存和文件管理优越
+	5，linux最小只需要4M -> 嵌入式开发
+
+linux缺点：
+	1，操作相对困难
+
+	
+linux命令
+
+	一，关机命令
+		halt			立即关机
+		poweroff		立即关机
+		shutdown -h now 立刻进行关机
+		init 0			立即关机
+
+		shutdown -r now 现在重新启动计算机
+		reboot 			现在重新启动计算机
+		init 6			现在重新启动计算机
+		（注意：init命令只有超级管理员才能使用）
+
+		startx	/ init 5		从命令行界面进入图形界面
+		Ctrl+Alt+F2 / init 3 	从图形界面进入命令行模式
+	
+	
+	二，用户管理命令（注意：*命令只有超级管理员（或具有超级管理员权限的用户）才可以使用）
+		w										查看当前登录系统的用户
+		*useradd [参数] 用户名							添加用户
+			参数：-g 组编号/组名称
+				  -u 用户编号（自定义，必须唯一）
+				  -d 家目录（自己指定该用户的家目录位置）
+				  -s 登陆时运行的shell脚本路径
+			例如：
+				useradd -s /sbin/nologin abc    添加abc用户，但禁止abc用户登陆系统
+				useradd xiaoming 				添加xiaoming用户
+				useradd -g admin xiaoming		添加xiaoming用户，同时把xiaoming用户分配到admin组
+				useradd -g 502 xiaohong			添加xiaohong用户，同时把xiaohong用户分配到组别编号为502的组
+				useradd -g 503 -u 600 -d /home/xueyou xueyou
+					创建xueyou用户，指定组编号为503，自身编号为600，家目录位置在/home/xueyou
+		
+		*usermod 参数 用户名					修改用户信息
+			参数：-u 新编号 			修改用户编号
+				  -g 组编号/组名称 		修改用户组别
+				  -d 新家目录			修改用户家目录
+				  -l 新用户名			修改用户名
+			例如：
+				usermod -g admin xiaoming 				修改xiaoming的组为admin
+				usermod -d /var/xiaoming xiaoming 		修改xiaoming的家目录位置为/var/xiaoming
+				usermod -l xm xiaoming					修改xiaoming的用户名为xm
+				usermod -u 511 xm						修改xm的用户编号为511
+				usermod -u 502 -g 503 -d /home/xiaoming -l xiaoming xm		  
+		
+		*userdel [参数] 用户名					删除用户
+			参数：-r					删除用户的同时删除用户的主目录
+			例如：
+				userdel -r xiaoming
+		
+		*passwd [用户名]						修改密码[不输入用户名的话，则修改当前用户的密码。输入用户名的话，则修改该用户名的密码]
+		
+		logout									注销
+		exit									退出
+		
+		su - [用户名]							切换用户
+			例如：	su - 			切换为root用户
+					su - root 		切换为root用户
+					su xiaoming 	切换为普通用户
+			注：多次使用su指令会造成用户的叠加，若这时需要删除用户，则不发生效，因为用户正在使用，
+		需要exit退出用户后，才可以删除。
+			*root用户切换为普通用户不需要输入密码
+			*普通用户切换为root用户需要输入密码
+		
+		注：用户信息通常存储于/etc/passwd文件内，而密码是单独保存在/etc/shadow文件中。
+	
+	
+	三，组管理命令（组的操作只有超级管理员权限的用户可以操作）
+		groupadd 组名称					添加组
+			例如：
+				groupadd xiaoming 			添加xiaoming组
+				注：用户组的管理文件位置存放于：/etc/group
+		
+		groupmod 参数 用户组名			编辑用户组
+			参数：-g 新组id 组名称
+                  -n 新组名称 组名称			
+			例如：
+				groupmod -n new_admin admin
+				groupmod -g 502 admin
+
+		groupdel 组名称					删除用户组
+			例如：
+				groupdel test1
+			注意：若删除的用户组中有存在用户，则无法删除
+	
+		chown 用户名 文件名				修改文件的所有者
+			例如：
+				chown xiaoming abc 			: 改变abc的所有者为xiaoming
+				chown root ./abc 			：改变abc这个目录的所有者是root
+				chown -R root ./abc 		：改变abc这个目录及其下面所有的文件和目录的所有者是root
+				chown root.mysql ./abc		: 改变abc目录的所有者为root,组别为mysql
+				chown .mysql ./abc			: 改变abc目录的组别为mysql
+				
+		chgrp 组名 文件名				修改文件的所在组
+			例如：
+				chgrp root abc 				: 改变abc所属的组为root
+		
+		chmod 							改变文件或目录的权限
+			例如：
+				chmod 755 abc 				: 赋予abc权限rwxr-xr-x
+				chmod u=rwx,g=rx,o=rx abc 	: 同上 u=用户权限 g=组权限 o=不同组其他用户权限
+				chmod u-x,g+w abc 			: 给abc去除用户执行的权限，增加组写的权限
+				chmod a+r abc 				: 给所有用户添加读的权限
+				chmod a=rw abc 				: 给所有用户添加abc的读写权限（a表示ugo）
+				chmod -/+rw abc				: 给所有用户减少或者添加 读写权限
+			注意：如果操作的对象是文件夹，根据情况加上-r参数，表示递归赋予权限
+			读权限是最基本的，要想写入或者执行操作，则必须拥有读权限。要么所有权限都不给。
+			
+		
+	四，运行级别命令
+		init [012356]
+		运行级别：
+			0：关机【切记0号不要设计成关机，否则会一开机就立马关机，无限循环】
+			1：单用户
+			2：多用户状态没网络服务
+			3：多用户状态有网络
+			4：系统未使用保留给用户
+			5：图形界面
+			6：系统重启
+		常用运行级别是3和5，要修改默认的运行级别，可改文件
+		/etc/inittab 的 id:5:initdefault:这一行中的数字(超级管理员才可操作)
+		例如：
+			默认是：id:5:initdefault:	图形界面
+			修改：id:3:initdefault:		命令行模式（多用户有网络）
+		
+		小提示：
+			若不小心设置成0（关机）或者6（重启），导致无限循环的解决方法！
+				：1,在进入grub引导界面程序时候，请输入 e ，进入一个选择页面
+				: 2,选择第二个模式，不要回车，再次输入 e
+				: 3,在末尾输入 1【注意：是“空格1”<==> 1】
+ 				: 4,1 代表单用户级别。【为啥不设置其他级别。因为其他级别会读取配置文件，唯独单用户不会读取配置文件】
+				: 5,回车之后结束编辑页面之后，按b重新启动进入单用户模式。
+	
+	
+	五，目录操作命令
+		pwd							显示当前工作目录
+		cd 文件路径					切换目录
+		ls [-a[l][h]] [文件路径]	列出文件和目录  
+			-i:查看文件索引号
+			-a:显示隐藏文件 
+			-l:显示长列表格式
+			-h:查看文件所有者、组
+			-al 显示所有文件(包括隐藏文件),并以长列表格式显示
+		
+		mkdir -p 文件夹名			建立目录（-P 建立多级目录）
+		rmdir						删除空目录
+		
+	六，文件操作命令
+		touch 文件名				建立空文件
+		cp file1 file2				拷贝文件
+			例如：
+				cp index.php /home/admin/
+				cp -r dir1 dir2              -r  表示递归复制子目录信息
+				cp -rf dir1 dir2			 -rf 表示递归强制复制子目录信息（如文件存在，强制覆盖）
+				
+		mv oldfile newfile 			移动文件和改文件名
+			例如：
+				mv index.php indes.php
+				mv index.php /home/admin/indes.php
+				
+		rm [-r[f]] dir/file			删除文件和目录
+			例如：
+				rm -rf *			删除所有内容（包括目录和文件） r递归 f强制
+		
+		du -h 文件/目录				查看文件/目录占据磁盘的大小
+		
+		ln -s 源目标路径 软链接 	建立软链接
+			例如：
+				
+				ln -s /etc/inittab inittab 【inittab指向实际文件：/etc/inittab】
+				ln -s /home/admin/apache /var/apache 【如果软链接文件与源文件不在同一目录，则源文件需要设置为“绝对路径”】
+			注意：
+				1，设置软件连接，如果软连接和源文件不在同一目录，则源文件需要设置为“绝对路径”
+				2，普通文件和目录都可以设置软链接
+				3，源文件被删除，对应的软链接就变为“无效链接”，如果在创建一个同名源文件，软链接又回复为有效链接文件。
+		
+		ln [-d] 源文件 硬链接
+			同一个文件实体如果有多个名称（引用），即使其中一个名称被删除，也不影响其他名称的使用（该文件实体依存在）。
+			如果一个文件实体只有一个名称，执行rm删除指令，只是删除文件名字而已。
+			系统的垃圾回收机制会定期检查该文件时候存在名称（引用），名称不存在就当垃圾回收。
+		
+			例如：假设abc.txt 文件存在
+				ln -d abc.txt ccc.txt		ccc.txt文件也指向abc.txt文件的内容实体
+				
+			使用ll/ls -l 命令可以查看硬链接数量。在权限值得下一个。
+				-rwxrwxrwx 2 root root 10 8月 22 16:33 passwd
+				解释：	-rwxrwxrwx 权限
+						2          硬链接数量
+						root	   文件所有者
+						root	   文件所在组
+						10		   文件大小（字节）
+						8月		   文件最后的修改月份
+						22		   文件最后的修改日期
+						16:33	   文件的最后修改时间
+						passwd	   文件名称
+			注意：
+				1，硬链接的源文件不需要使用绝对路径,
+				2，只有文件可以使用硬链接，目录不可以
+				3，同一个源文件的所有硬链接必须在同一个硬盘，同一个分区里面
+			
+			硬链接的好处：
+				防止重要文件被删除
+				如果有对人需要操作同一个文件，就给他们创建许多硬链接即可。
+				比较大的文件在服务器可以只存储一份，大家各自使用对应的硬链接即可
+	
+		软链接和硬链接异同
+			不同点：
+				软链接是快捷方式，可以用在硬盘空间合理分配上
+				硬链接就是文件的名字，一个文件的许多名字互为硬链接
+			相同点：
+				都是针对同一个目标进行操作
+	
+	
+	七，文件内容操作命令
+		cat 文件名						打印文件内容输出到终端
+		more 文件名						通过敲回车方式逐行查看文件的各行内容
+		less 文件名						通过上下左右键开查看文件的内容（下一页使用空格/PageDown，上一页使用Ctrl+pageUP）
+		head -n 文件名					查看文件的前n行内容
+		tail -n 文件名					查看文件的末尾n行内容
+		wc 文件名						查看文件的行数
+		
+		grep [-n] "查询内容" 文件名		在文件中查询内容  -n:显示行数
+			例如：
+				grep -n "12" /root/abc.txt			查找“12”字符串出现在abc文件的哪几行
+				grep -n "12" /root/abc.txt /home/   在home目录下和abc文件中，查找“12”字符串出现的位置和文件名
+				grep -n "12" /root/abc.txt /home/*  在home目录下所有文件和abc文件中，查找“12”字符串出现的位置和文件名
+				
+		|								管道命令
+			例如：ls -l /home | more			把ls查询的结果，进行分页
+				  grep sbin /etc/passwd | wc	查询sbin出现的次数
+			
+		
+		find							搜索文件及目录
+			在Linux中，因为文件系统是以级别式的结构来组成，所以要在整个系统中找到
+		特定的文件和目录并不是件容易的事，而“find”命令可以解决上述问题。
+			1，在特定的目录下搜索并显示指定名称的文件和目录
+				find / -name man: 意思是说从根目录开始搜索名称为man的文件或目录
+			2，搜索一段时间内被存取/变更的文件或目录
+				find /home -amin -10: 十分钟内存取的文件或者目录
+				find /home -atime -10: 十小时内存取的文件或者目录
+				find /home -cmin -10:	十分钟内更改过的文件或目录
+				find /home -ctime +10:	十小时前更改过的文件或目录
+			3，搜索指定大小的文件
+				find /home -size 10: 意思是说查找/home目录下大小为10字节的文件
+				find /home -size 10c: 意思是说查找/home目录下大小为10字节的文件
+				find /home -size +10k: 意思是说查找/home目录下大小大于10k的文件
+				find /home -size -10k: 意思是说查找/home目录下大小小于10k的文件
+				find /home -size -10k: 意思是说查找/home目录下大小小于10k的文件
+			4，限制查找目录层次
+				find / -maxdepth 4 -name passwd   ：限制查询passwd文件最多不超过4个层次
+				find / -mixdepth 2 -name passwd   ：限制查询passwd文件最少有2个层次
+				find / -mixdepth 2 -maxdepth 4 -name passwd   ：限制查询passwd文件在2~4个层次之间
+			5，根据组别查找
+				find / -group 205 -name passwd	:  查询组别为205的passwd文件
+			6，根据用户查找
+				find / -user 505 -name passwd	: 查询文件所有者为505的passwd文件
+			7，根据文件类型查找
+				find / -type f -name passwd	: 查找passwd文件
+				find / -type d -name paaswd : 查找passwd目录
+			
+		
+	八，vim命令	（vi和vim是同一个模型的命令，vim是vi命令的增强版）
+		第一种方式：vim 文件名				打开一个文件
+		第二种方式：vim +数字 文件名		打开一个文件（打开文件之后快速的将光标定位到指定的行）
+		第三种方式：vim +/字符串 文件名		打开一个文件（打开文件，之后高亮显示/后的字符串）
+			
+			在文件内容的操作：
+				1，进入编辑模式
+					a : 光标向后移动一位
+					i : 光标和所在字符 不发生任何变化
+					o : 新起一行
+					s : 删除当前光标的字符
+					: : 进入末行模式（按esc退出末行/编辑模式）
+				
+				2，显示设置
+					:set nu   								在文件中每行行处加入行号
+					:set nonu 								取消行号
+					:输入数字  								若直接输入数字再按esc键，就可将光标移至该行行首
+					/字符串	  								在很长的文件中，可以利用“/字符串”的命令来查找特定字符。例如"/tcp",
+					?字符串  								同/字符串命令一样是用来查找文件，只不过按“n”键是往上查找上一个
+					:nohl	  								取消高亮显示
+					:set autoindent							自动缩进
+					:syntax enable							语法高亮
+					:set warp								自动换行
+					:set ignorecase							忽略大小写
+				
+				3，撤销命令：
+					u			撤销改动
+					数字u		撤销多布
+					.			重复上一个命令
+					Ctrl+r		重做
+				
+				4，复制粘贴命令：
+					yy			复制当前行
+					nyy			以当前光标为基点，向下复制n行
+					P			粘贴到光标之前
+					p			粘贴到光标之后
+				
+				5，删除（剪切）命令：
+					dd 			删除当前行，删除之后下一行上移
+					ndd			以当前光标为基点，向下删除n行
+					d			剪切
+					D  			删除当前行，下一行不上移动	
+					x			删除当前光标的字符
+					X			删除当前光标左边的字符
+					c+w			从光标所在位置删除单词，并进入编辑模式
+				
+				6，光标移动命令(在命令模式下)：
+					G		将光标切换到最后一行
+					gg		将光标切换到第一行
+					数字G	将光标定位到数字指定的行
+					$		将光标移动到当前行的末尾
+					0/^		将光标移动到当前行的行首
+					k/j/h/l 光标上/下/左/右移动
+					w		移动到下个单词的首字母
+					e		移动到下个(本)单词的尾字母
+					b		移动到上个(本)单词的首字母
+					{		上个(本)段落首部
+					}		下个(本)段落的尾部
+					H		屏幕首部(不翻屏)
+					L		屏幕尾部(不翻屏)
+				
+				7，替换字符串命令：	
+					:s/需要替换的字符串/替换成的字符串		只替换当前光标所在行的第一处
+					:s/需要替换的字符串/替换成的字符串/g	只替换当前光标所在行全部符合条件的地方
+					:%s/需要替换的字符串/替换成的字符串		替换当前文件的每一行的第一个符合条件的字符串
+					:%s/需要替换的字符串/替换成的字符串/g	替换所有符合条件的字符串
+					:%s/需要替换的字符串/替换成的字符串/gc	每次替换要求确认
+				
+				8，保存退出命令
+					:w			保存
+					:q			退出
+					ZZ|:wq|:x 	保存退出
+					ZQ|:q!		不保存退出
+					:w filename	另存为
+					:X			退出保存并加密当前文档
+				
+				9，屏幕操作命令(在命令模式下)：
+					Ctrl+y		向上滚动
+					Ctrl+e		向下滚动
+					Ctrl+u		向上滚动半屏
+					Ctrl+d		向下滚动半屏
+					Ctrl+b		向上滚动全屏
+					Ctrl+f		向下滚动全屏
+				
+				10，相关快捷操作
+					J 			合并上下两行
+					r			单个字符替换
+				
+				注：如果需要在搜索的高亮结果中进行光标的快速跳转，可以按下键盘上的“n”进行
+		向下跳转，“N”向上进行跳转
+		
+			
+		基本开发步骤：
+			示例：创建index.php文件，并写入hello word
+			1,vim index.php
+			2,输入 i[进入插入模式]
+			3,输入代码：<?php echo "hello word"; ?>
+			4,输入esc[进入命令模式]
+			5,输入:[wq/x/ZZ表示退出保存，q表示退出，w表示保存，ZQ/q!表示退出不保存，w filename 表示另存为]
+
+		扩展知识：
+			1，默认显示行号
+				修改 /用户目录/.vimrc 文件进行配置（文件不存在自己创建），写入“set nu” ，然后退出保存。
+			2，别名机制
+				使用命令 （重启失效）
+					alias 别名='命令' 设置
+				
+				或者
+				
+				编辑 /用户目录/.bashrc 文件来设置别名
+					找到alias开头的行，在后面追加需要设置的名和利别名，例如:追加 alias cls='clear',然后保存退出，重新登陆才会生效
+			3，异常关闭处理
+				当一个文件在vim中进行打开，打开之后没有正常关闭（直接关闭远程链接），下次打开该文件，
+			会提示错误信息。这是需要删除 原有文件名.swp 文件，即可恢复。
+				解释：.wsp文件 通常都是 交换/缓存文件
+			4，:wq和:x 的区别
+				解释：:wq和:x都用于保存退出文件编辑，而:wq不管文件是否修改，只要打开之后使用:wq保存，都会更新文件的修改时间。
+				而:x保存的文件，在文件无发生变化的时候不会更新文件的修改时间。
+			
+	
+	九，重定向命令
+		ls -l > a.txt 			: 将列表的内容写入a.txt中（覆盖写）
+		ls -al >> aa.txt 		: 将列表的内容追加到文件aa.txt的末尾（追加写）
+		从文件中输入信息 database_program < database_data
+		echo 内容 > 文件名称	：把"内容"以覆盖写方式追加给“文件”,文件不存在会自动创建
+		echo 内容 >> 文件名称	：把"内容"以追加写方式追加给“文件”,文件不存在会自动创建
+	
+	
+	十，分区管理命令
+		mount [-参数] [设备名称] [挂载点(保存目录)] 	挂载命令
+			特别说明：在挂载光驱时,可直接使用 mount /mnt/cdrom
+			
+		umount [挂载点 或者 挂载目录]					卸载命令
+			例如：umount /mnt/cdrom(挂载点)
+				  umount /dev/sr0（硬件：挂载目录）						
+		
+		eject											弹出光盘（卸载挂载点）
+		
+		//lsdlk											获取设备名称
+		
+		df [-参数]										查看磁盘使用情况
+			例如：
+				df -l[h]								查看当前磁盘使用情况
+					l 使用字节查看磁盘的使用情况。
+					h 使用单位(M/G)查看磁盘的使用情况。
+				df [目录全路径]							查看某个目录是在那个分区
+		
+		fdisk -l										查看linux系统分区的具体情况
+		
+	
+	十一：shell操作命令。
+		（shell解析器通常存放在/bin目录下，文件结尾时sh。命令：ls -l /bin/*sh）
+		env								查看目前使用的是哪种shell？(该命令可以显示当前操作系统的环境变量)
+		
+		chsh -s 输入新的shell			修改shell
+			例如：chsh -s /bin/csh		使用csh解析命令
+			
+		ls -l /bin/*sh					查看当前操作系统有哪几种shell解析器
+		
+		histroy							查阅历史记录命令
+			例如：
+				histroy		: 列出所有使用的命令
+				history 5 	: 显示最近使用的5个命令	
+				!5 			: 执行历史编号为5的命令
+				!ls 		: 执行最后一次以“ls”开头的命令
+		
+		
+		alias 别名 '命令'				把命令简化（给某条命令起别名）
+			例如：
+				alias llh='ls -l /home'
+				解释：把ls -l /home简化成llh
+				
+				alias		显示系统当前定义的所有alias(快捷命令)
+	
+	
+	十二，进程管理命令
+		ps					查看系统进程
+		例如：
+			ps				查看所有系统进程
+			ps -a			显示当前终端的所有进程
+			ps -u			以用户的格式显示进程信息
+			ps -x			显示后台进行运行的参数
+			ps -aux			查看进程的全面信息
+			ps -A			查看系统活跃的进程
+			
+			ps显示的字段信息：
+				PID			进程识别号
+				TTY			终端机号
+				TIME		此进行所消耗的CPU时间
+				CMD			正在执行的命令或进程名
+	
+		kill 进程号				终止某个进程
+			例如：
+				kill 16251		终止进程号为16251的进程
+				kill -9 16251	因为有些进程会捕捉某些信号，如果不能直接结束进程可以使用“-9”传送信息
+		
+		killall 进程号			终止某个进程及其所有子进程
+	
+		top					动态监视进程
+			概述：top与ps命令很相似。他们都是用来显示正在执行的进程。top与ps最大的不通
+		 指出，在于top在执行的一段时间可以更新正在运行的进程。
+			例如：
+				1，监视特定用户进程
+					top：输入此命令，按回车。查看执行的进程
+					u:   然后输入“u”回车，再输入用户名即可。
+				2，终止指定的进程
+					top：输入此命令，按回车。查看执行的进程
+					k:   然后输入“k”回车，再输入要结束的进程ID号即可。
+				3，指定系统状态更新的时间
+					top -d 10:指定系统更新进程的时间为10秒
+			
+			退出top: q 或者 Ctrl+c
+	
+	
+	十三，系统时间管理命令
+		date					显示系统时间
+		date MMDDHHMMCCYY.SS	更改系统时间
+			解释：date 月月日日时时分分年年年年.秒秒
+			例如：date 102513592017.20
+		date -s "时间格式"
+			例如:
+				date -s "2015-07-08 15:25:34"
+		cal 3 2002				查看月历。查看2002年3月的月历
+		cal 2008				查看2008年的月历
+	
+	
+	十四，监控网络状态信息命令
+		netstat -anp			显示网络统计信息.(-an 按端口号排序，-p显示进程ID和进程名称)
+		netstat -tlunp			显示正在运行的进程信息
+		ping ip地址				检测主机连接
+		traceroute 域名			显示数据包经过历程命令
+		route					查看本机路由的情况
+	
+	
+	十五，压缩和解压命令
+		zip 					 压缩文件
+			例如：
+				zip file.zip *   					把“当期文件夹内所有文件”压缩成file.zip文件
+				zip -m file.zip to.txt 				把to.txt压缩成file.zip文件，然后自动删除to.txt文件
+				zip -r file.zip *					将当前目录下的子目录一起压缩。
+				zip -j file.zip * 					忽略子目录内容压缩
+				zip -n .mpg: .jpg:.gif:				将已压缩的活没有必要压缩的去掉再压缩。
+					解释：第一种文件中间要用“: ”分开
+				zip -t 10202002 file.zip			将当前目录下载2002年10月20日之后文件压缩
+				zip -y file.zip *					不压缩链接文件的原文件
+				zip -9 file.zip *					压缩率。-1~-9，-9压缩率最高
+				zip file.zip * -x file2.txt 		在压缩时，将当前目录内的file2.txt文件排除在外
+				zip -d myfile.zip smart.txt 		删除压缩文件中的smart.txt文件
+				zip -r filename.zip file1 file2 file3 /usr.work/school
+					解释：把 file1、file2、 file3、以及 /usr/work/school 目录的内容（假设这个目录存在）压缩起来，然后放入 filename.zip 文件中
+				zip filename.zip 
+				
+		unzip					解压文件
+			例如：
+				unzip filename.zip					解压filename.zip到当前目录
+				unzip -o -d /home/sunny myfile.zip	把myfile.zip文件解压到/home/sunny/
+					解释：-o ：不提示的情况下覆盖文件		-d : -d /home/sunny 指明将文件解压缩到/home/sunny目录下
+				unzip file.zip -x file2				除了file2文件外，其他的文件都解压缩
+				unzip -Z file.zip					查看file.zip压缩包的内容。也可以使用"-l","-v"来查看
+			
+		
+		tar 命令详解
+			语法：tar [主选项+辅选项] 文件或者目录
+			主选项：
+			　　-c: 建立压缩档案
+			　　-x：解压
+			　　-t：查看内容
+			　　-r：向压缩归档文件末尾追加文件
+			　　-u：更新原压缩包中的文件
+			　　这五个是独立的命令，压缩解压都要用到其中一个，可以和别的命令连用但只能用其中一个。下面的参数是根据需要在压缩或解压档案时可选的。
+			
+			辅选项：
+				-b: 该选项是为磁带机设定的。其后跟一数字，用来说明区块的大小，系统预设值为20(20*512 bytes)。
+				-f: 使用档案文件或设备，这个选项通常是必选的。　　
+				-k：保存已经存在的文件。例如我们把某个文件还原，在还原的过程中，遇到相同的文件，不会进行覆盖。
+				-m: 在还原文件时，把所有文件的修改时间设定为现在。
+				-M: 创建多卷的档案文件，以便在几个磁盘中存放。
+				-v: 详细报告tar处理的文件信息。如无此选项，tar不报告文件信息。
+				-w: 每一步都要求确认。
+				-z: 用gzip来压缩/解压缩文件，加上该选项后可以将档案文件进行压缩，但还原时也一定要使用该选项进行解压缩。
+				
+				
+			　　下面的参数-f是必须的
+			　　-f: 使用档案名字，切记，这个参数是最后一个参数，后面只能接档案名。
+			
+				例如：
+				　　# tar -cf all.tar *.jpg
+				　　这条命令是将所有.jpg的文件打成一个名为all.tar的包。-c是表示产生新的包，-f指定包的文件名。
+				
+				　　# tar -rf all.tar *.gif
+				　　这条命令是将所有.gif的文件增加到all.tar的包里面去。-r是表示增加文件的意思。
+
+				　　# tar -uf all.tar logo.gif
+				　　这条命令是更新原来tar包all.tar中logo.gif文件，-u是表示更新文件的意思。
+
+				　　# tar -tf all.tar
+				　　这条命令是列出all.tar包中所有文件，-t是列出文件的意思
+
+				　　# tar -xf all.tar
+				　　这条命令是解出all.tar包中所有文件，-x是解压的意思
+
+				　　压缩
+					　　tar –cvf jpg.tar *.jpg 		//将目录里所有jpg文件打包成tar.jpg
+					　　tar –czf jpg.tar.gz *.jpg 	//将目录里所有jpg文件打包成jpg.tar后，并且将其用gzip压缩，生成一个gzip压缩过的包，命名为jpg.tar.gz
+					　　tar –cjf jpg.tar.bz2 *.jpg 	//将目录里所有jpg文件打包成jpg.tar后，并且将其用bzip2压缩，生成一个bzip2压缩过的包，命名为jpg.tar.bz2
+					　　tar –cZf jpg.tar.Z *.jpg 	//将目录里所有jpg文件打包成jpg.tar后，并且将其用compress压缩，生成一个umcompress压缩过的包，命名为jpg.tar.Z
+					　　rar a jpg.rar *.jpg 		//rar格式的压缩，需要先下载rar for linux
+					　　zip jpg.zip *.jpg 			//zip格式的压缩，需要先下载zip for linux
+
+				　　解压
+					　　tar –xvf file.tar 			//解压tar
+					　　tar -xzvf file.tar.gz 		//解压tar.gz
+					　　tar -xjvf file.tar.bz2 		//解压tar.bz2
+					　　tar –xZvf file.tar.Z 		//解压tar.Z
+					　　unrar e file.rar 			//解压rar
+					　　unzip file.zip 				//解压zip
+
+			　　总结
+				　　1、*.tar 用 tar –xvf 解压
+				　　2、*.gz 用 gzip -d或者gunzip 解压
+				　　3、*.tar.gz和*.tgz 用 tar –xzf 解压
+				　　4、*.bz2 用 bzip2 -d或者用bunzip2 解压
+				　　5、*.tar.bz2用tar –xjf 解压
+				　　6、*.Z 用 uncompress 解压
+				　　7、*.tar.Z 用tar –xZf 解压
+				　　8、*.rar 用 unrar e解压
+				　　9、*.zip 用 unzip 解压
+		
+		
+		十六：特殊指令
+			who am i					显示当前登陆的用户
+			which 命令					显示命令所在的位置
+				例如：which ls	显示ls命令程序所在的位置
+		
+		
+	
+linux	目录结构（重要目录）
+	/			根目录
+	/root		存放root用户的相关文件目录
+	/dev		系统中的所有设备文件
+	/home		存放普通用户的相关文件目录
+	/bin		存放常用命令的目录(系统任何用户都可以执行该目录中的命令)
+	/sbin		要具有一定权限才可以使用的命令（系统管理命令，普通用户不能执行他们）
+	/mnt		默认挂载光驱和软驱的目录
+	/etc		存放配置相关文件（系统中的配置文件）
+	/var		存放系统中经常变化的文件
+	/boot		存放引导相关的文件（存放linux操作系统启动时所需使用的文件）
+	/usr		软件安装默认文件夹（系统应用程序和相关文件）
+		/usr/bin	许多"指令" 对应的可"执行程序文件"目录
+		/usr/sbin	root用户执行的指令 对应的 可"执行程序文件"目录
+	/tmp		系统的临时目录
+	/proc		内存映射目录，该目录可以查看系统的相关硬件信息
+	/lib		系统资源文件类库目录
+	/selinux	对系统形成保护，会对给系统安装软件时有干扰作用
+	
+	
+linux任务调度命令
+	概述：
+		任务调度：是指系统在某个时间执行特定的命令或程序
+		任务调度分类：
+			1，系统工作：有些重要的工作必须周而复始地执行。如病毒扫描
+			2，个别用户工作：个别用户可能希望执行某些程序
+	
+	设置任务调度文件：/etc/crontab
+		1,设置个人任务调度。执行  crontab -e
+		2,接着输入任务到调度文件
+			如：5 * * * * ls -l /etc/ > /tmp/to.txt
+			意思说每小时的第五分钟执行ls -l /etc/ > /tmp/to.txt命令
+		
+			* * * * * ls -l /etc/ > /tmp/to.txt
+			意思说每分钟执行ls -l /etc/ > /tmp/to.txt命令
+		
+			* * 1 * * ls -l /etc/ > /tmp/to.txt
+			意思说每月的第一天执行ls -l /etc/ > /tmp/to.txt命令
+		
+	调度文件规则：
+		字段名称		说明						范围
+		分钟			每小时中的第几分钟执行		0-59
+		小时			每日的第几个小时执行		0-23
+		日期			每月的第几天执行			1-31
+		月份			每年的第几月执行			1-12
+		星期			每周的第几天执行			0-6
+		命令名称		欲执行的命令名称及其参数
+	
+	
+	如何调度多个任务？
+		方法一：（不推荐）
+			在crontab -e 中直接添加多个任务。【一行一个任务】
+	
+		方法二：（推荐）
+			可以把所有的任务，写入到一个可执行文件(shell编程)
+			例如：
+				1，建立一个.sh结尾的文件。 vi /root/my_test.sh
+				2，写入任务调度命令，不需要写入时间。
+					ls -l /etc/ > /tmp/to.txt		#把ls结果写入一个文件
+					cp /tmp/to.txt /home			#拷贝文件到home目录下
+				3，保存退出，查看该文件的执行权限。
+				4，若该文件无执行权限，则需要添加执行权限。
+					chmod 774 /root/my_test.sh
+				5，在使用 crontab -e
+					写入：* * * * * 可执行文件地址(全路径)
+					例如：* * 1 * * /root/mt_test.sh
+					意思是每月的第一天执行 /root/mt_test.sh 文件
+						
+						
+	如何终止任务调度？
+		crontab -r	: 终止任务调度（小心使用，会删除所有调度任务）
+		crontab	-l	: 列出当前有哪些任务调度
+
+		
+		
+linux分区
+		linux分区有主分区和扩展分区组成，并且主分区+扩展分区个数不能超过4。而扩展分区必须分区后
+	才能写入数据（就是说扩展分区需要再次分区），扩展分区再次分区的分区叫逻辑分区，逻辑分区数量不限。
+
+
+	
+tcp/ip基础 -- ip地址与包的路由传递
+	概述：每个internet上的主机的路由器都有一个ip地址。它包括网络号和主机号，所有的ip地址都是32位
+的。ip地址按照国际标准的划分a,b,c,d,e五中类型。
+
+a类：0 			7位网络号 		主机号		1.0.0.0至127.255.255.255
+b类：10 		14位网络号 		主机号		128.0.0.0至191.255.255.255
+c类：110 		21位网络号 		主机号		192.0.0.0至223.255.255.255
+d类：1110 		多点播送地址 				224.0.0.0至239.255.255.255
+e类：11110 		留作将来使用 				240.0.0.0至247.255.255.255
+     --------------------------------->
+				  共32位
+
+				  
+
+linux网络环境配置
+	第一种方法：
+		1，用root身份登录，运行setup命令进入到text mode setup utiliy 对网络进行配置。
+	这里可以进行ip，子网掩码，默认网关，dns的设置。
+		2，这时网卡的配置没有生效，运行/etc/rc.d/init.d/network restart命令刚才的设置生效。
+
+	第二种方法：（临时生效,即重启后重置配置）
+		1，ifconfig eth0 x.x.x.x对网卡进行设置
+		2，ifconfig eth0 network x.x.x.x 对子网掩码设置
+		对广播地址和dns使用默认的。
+		注意：这样配置网络将会立即生效
+		解释：eth0代表网卡号，用ifconfig可以查看该服务器有多少网卡
+
+	第三种方法：
+		1，修改/etc/sysconfig/network-scripts/ifcfg-eth0这个文件里的各个属性可以修改。
+	包括ip，子网掩码，广播地址，默认网关。
+		2，这是网卡的配置没有生效。运行/etc/rc.d/init.d/network restart 或者 service network restart命令刚才修改
+	的设置生效。
+		备注：这种方法是最底层的修改方法
+
+	配置解释：
+		DEVICE=eth0                                     #设备名称
+		TYPE=Ethernet                                   #网络类型
+		UUID=4aba46df-1096-40be-aec4-0a7b86edc645       #唯一标识号
+		ONBOOT=yes                                      #是否连接网络
+		NM_CONTROLLED=yes
+		BOOTPROTO=none                                  #ip分配方式。dhcp自动获取，none手动填写
+		HWADDR=00:0c:29:3e:6e:84                        #网卡硬件地址
+		DEFROUTE=yes
+		PEERDNS=yes
+		PEERROUTES=yes
+		IPV4_FAILURE_FATAL=yes
+		IPV6INIT=no
+		NAME="System eth0"                              #网卡名称
+		IPADDR=192.168.234.2                            #ip地址
+		NETMASK=255.255.255.0                           #子网掩码
+		USERCTL=no
+
+
+linux -- RPM管理
+	RPM包的名称格式：
+	例如：apache-1.3.23-11.i386.rpm
+			"apache"	软件名称
+			"1.3.23-11"	软件的版本号，主版本和次版本
+			"i386"		是软件所运行的硬件平台
+			"rpm"		文件扩展名，代表RPM包
+
+
+	RPM常用指令：
+	rpm -qa 					查询所安装的所有rpm软件包
+		例如：
+			rpm -qa | more
+			rpm -qa | grep X
+
+	rpm -q 软件包名				查询软件包是否安装
+		例如：
+			rpm -q xinetd
+			rpm -q foo
+			rpm -q xinetd file bash
+
+	rpm -qi 软件包名			查询软件包信息
+		例如：
+			rpm -qi file
+
+	rpm -ql 软件包名			查询软件包中的文件
+		例如：
+			rpm -ql file
+			rpm -ql jdk
+
+	rpm -qf文件全路径名			查询文件所属的软件包
+		例如：
+			rpm -qf /etc/passwd
+			rpm -qf /root/install.log
+	
+	rpm -qp 软件包名			查询包的信息对这个软件的介绍
+		例如：
+			rpm -qp jdk-1_5_0-linux-i586.rpm
+			rpm -qpi jdk-1_5_0-linux-i586.rpm
+			rpm -qpl jdk-1_5_0-linux-i586.rpm
+			
+	rpm -i RPM包全路径名称		安装包到当前系统
+
+	rpm -ivh RPM包的全路径名称	安装包到当前系统有提示信息
+		参数解释：
+			i = install 安装
+			v = verbose 提示
+			h = hash    进度条
+
+	rpm -e 软件包名称			删除软件包
+		例如：
+			rpm -e jdk
+			rpm -e jdk -f --nodeps
+		注意：如果其他软件依赖于您要卸载的软件包，卸载时则会产生错误信息。
+		若想让RPM忽略这个错误继续卸载（不推荐这么做），请使用--nodeps命令行选项。
+			-f 是指强制
+			
+	rpm -U 软件包名称			升级软件包
+		例如：
+			rpm -U cvs-1.11.2-10.i386.rpm
+
+	
+	
+
+小知识：
+javac java文件 	编译java文件命令：
+java java文件 	运行java文件命令：
+Ctrl+a			将光标快速的切换到命令行的最前面
+Ctrl+e			将光标快速的切换到命令行的最后面
+Ctrl+c			退出当前命令
+tab				用于补全文件名或者文件夹名。若连续按下两次，列出特定字符开头“命令” 或者 “文件和目录”
+
+
+在windows中如何查看一个数据包到底经过多个路由器转发？
+	：命令 tracert 目标ip/域名  [追踪路由]
+	：例如 tracert www.baidu.com
+
+	
+在linux中，若要在后台运行一个程序，则需要在命令行的末尾加上 &.(空格+&)
+	例如：
+		正常运行一个javac程序： ./home/jdk/javac
+		后台运行javac程序：/home/jdk/javac &
+
+		
+在使用ls显示某个文件夹的时候，文件内容过多，导致无法看到前面的文件，如何解决？
+	：使用命令 ls -l [目录名(不填默认当前路径)] | more
+	: | 使用管道，more 分页显示
+	：解释：把ls显示的结果，进行分页
+
+	
+修改目录（ls命令）颜色
+	1,vim /etc/DIR_COLORS   编辑文件夹颜色目录
+	2,找到“DIR 01;34   # directory”，将34改为36
+	提示：你可以找到文件的两行注释：      
+	# Text color codes: 
+	# 30=black 31=red 32=green 33=yellow 34=blue 35=magenta 36=cyan 37=white       
+	按照颜色对应的数字，你还可以把目录显示颜色改成其他的。同样其他的显示效果（包括背景）也可以参照说明进行修改。
+	这样你就可以定制自己的linux下命令行方式下的个性化显示效果了。
+	3，保存退出，重新启动即可生效
+	
+	
+在linux和unix系统中 | 就是管道命令，如何理解？
+	：把上一个命令的结果交给 | 后面的命令处理
+	
+	
+在linux中，若不熟悉命令，如何求助？
+	：输入命令 man 某个命令,回车即可查看相关命令的所有参数详解。或者 使用 命令 --help
+	：例如：查看ls参数。 命令：man ls
+	：或者
+	：ls --help
+	
+	
+在linux中，如何查看所有组信息？
+	：输入命令 vi /etc/group  或者 cat /etc/group(建议) 
+	：解释：vi 读写  ， cat 只读
+	
+
+在linux中，如何查看所有用户信息？
+	：输入命令 vi /etc/passwd 或者 cat /etc/passwd(建议)
+	
+	
+在linux中，文件权限如何解释？
+	: 例如 -rw-r--r--
+	: 分为四部分：1，-   2，rw-   3,r--  4,r--
+	: 权限分为三种：r 可读[用4标识]，w 可写[用2表示] ，x可执行[用1表示]
+	: 解释：
+	:	1，代表文件类型[-代表文件，d代表文件夹,....]
+	:	2, 文件所有者的权限。可读写
+	：	3，文件所在组对该文件的权限。可读
+	：	4，其他组的用户对该文件的权限。可读
+
+
+在linux如何挂载文件（即在linux中可以使用windows系统的文件）
+	步骤：（需提前准备软件安装包，做成iso镜像文件）
+		1，把iso镜像文件挂在到linux操作系统去
+		2，点击虚拟机菜单 ---> 设置 ---> CD/DVD(IDE) ---> 选择使用ios镜像文件
+		3，选择好iso文件后，点击确定。
+		4，在命令行输入命令：mount /mnt/cdrom/ 就可以了（目录不是固定的，可以随意。默认挂载是存放在mnt目录的）
+		5, 如何查看挂载是否成功？
+			cd /mnt/cdrom/
+			ls
+		看到iso镜像文件的内容，就表示挂载成功。
+
+		若想取消挂载的iso文件，则使用如下命令：
+		cd /
+		umount /mnt/cdrom/
+		cd /mnt/cdrom/
+		ls （若为空，则表示卸载成功）
+		
+	
+	还有更快捷的挂载方式：
+		虚拟机菜单 ---> 设置 ---> 选项 ---> 共享文件夹 --> 添加需要共享的文件夹 ---> 点击确定
+		
+
+在linux下安装java程序（建议安装文件拷贝到/home目录）
+	一，jdk的安装
+		1，切换到/home目录
+		2，安装jdk安装包
+			例如： ./xxxx.bin
+		过程省略....
+		
+		注意：若系统本身存已在java程序，这时又安装了一个新的java程序，系统使用的还是以前的java程序，
+		如何使用刚安装的java程序呢？
+			：查看一个文件 /etc/profile [环境配置文件]
+			：修改之前安装的java程序的环境变量，改成刚才安装的目录，重新启动计算机即可。
+			：例如：
+				unset i
+				原本：（需要注销，句首加上#号） 
+				#JAVA_HOME=/usr/java/j2sdk1.4.2_07
+				#PATH=$PATH:/usr/java/j2sdk1.4.2_07/bin
+				#CLASSPATH=.:/usr/java/j2sdk1.4.2_07/jre/lib/rt.jar
+				#export JAVA_HOME PATH CLASSPATH
+				
+				在下面添加新的环境变量：
+				JAVA_HOME=/home/j2sdk1.4.2_07
+				PATH=$PATH:/home/j2sdk1.4.2_07/bin
+				CLASSPATH=.:/home/j2sdk1.4.2_07/jre/lib/rt.jar
+				export JAVA_HOME PATH CLASSPATH
+				
+				解释：$PATH 表示不破坏之前的PATH变量，在之前的PATH后追加新的环境变量
+
+
+在linux系统下安装eclipse软件
+	前提：需要eclipse软件安装包
+	步骤：
+		1，把安装文件拷贝到home目录
+		2，cd /home/
+		3，解压eclipse.tar.gz，命令：tar -zxvf eclipse.tar.gz
+		5，解压完毕后，cd eclipse
+		6，启动eclipse之前，必须进入图像界面。
+		7，再寻找到eclipse可执行文件，执行即可。
+		8，或者进入终端，
+			cd /home/eclipse 进入eclipse目录
+			./eclipse 启动即可。
+			
+
+在linux系统安装myeclipse软件
+	前提：需要myeclipse软件安装包
+		1，把安装文件拷贝到home目录
+		2，cd /home/
+		若是.tar.gz结尾的文件，安装步骤和eclipse软件软件的安装步骤基本一样。
+		若是.bin结尾的文件，直接运行即可。 命令：./xxxx.bin     根据安装程序的步骤进行即可。 
+	
+	
+在linux系统安装tomcat，jboss，weblogic，websphere，resin.....(java ee服务器)
+	前提：需要准备软件安装包。以上列出的软件列表，只需安装其中一种即可。（建议安装tomcat）
+	步骤：
+		同myeclipse软件安装步骤一样
+	
+
+在linux系统安装realplay影音播放器
+	前提：需要准备安装包
+	步骤：
+		1，把安装文件拷贝到 home目录下
+		2，后缀是.bin文件，直接输入 ./xxx.bin 执行安装程序。
+
+		
+在windows中如何做成iso镜像文件？
+	：需要下载一个制作ISO的软件。（例如：WinISO,....）
+	: 根据软件使用教程制作ISO文件即可。
+	
+
+在linux系统安装samba服务器。
+	问：何为samba服务器？
+	答：windows与windows之间可以通过网络邻居实现文件共享，而windows与linux之间
+	要进行文件共享，则必须借助samba服务器来实现。
+		总来说：要想实现windows与linux之间跨平台的文件共享，则必须借助samba服务器来实现。
+		
+	问：如何安装samba服务器？
+	答：
+		步骤如下：
+			1，检查是否安装了：samba
+				命令：rpm -qa | grep smaba
+					此命令会检查出是否安装了samba软件包。若以安装，则会列出已安装的samba软件具体名称
+
+			2，mount /mnt/cdrom
+				cd /mnt/cdrom/   找到samba安装包
+				客户端和服务端需要的文件
+				rpm -ivh samba-common-xxxxx.rpm
+				rpm -ivh samba-xxxxx.rpm			服务器端软件
+				rpm -ivh samba-client-xxxxx.rpm		客户端软件
+				cd ~
+				umount /mnt/cdrom
+			
+			3，设置samba密码文件
+				先在linux中建立一个普通用户xiaoming
+				将/etc/passwd中的用户都加到smbpasswd中
+					cat /etc/passwd | mksmbpasswd.sh > /etc/samba/smbpasswd
+				设置用户xiaoming的samba密码
+					smbpasswd xiaoming
+			
+			4，启动samba服务
+				service smb start  		启动
+				service smb stop   		停止
+				serivce smb restart 	重启
+					
+			5，配置网络使windows和linux在一个网段，ip互连
+				ifconfig 					查看网络信息
+				ifconfig eth0 192.168.0.34	设置eth0的ip为192.168.0.34
+				ifconfig eth0 down()		禁止使用eth0	
+				ifconfig eth0 up()			打开eth0
+					
+			6，关闭linux中的防火墙（用setup命令到text mode设置）	
+				为了让网络配置生效，运行下面的命令
+				/etc/rc.d/init.d/network restart
+				/etc/rc.d/init.d/xinetd restart
+				
+			7，在windows中输入“\\ip地址”就可以访问linux中的共享文件了。
+			共享的目录使用户的默认登陆目录
+					
+					
+		samba 服务端配置
+			配置文件/etc/samba/smb.conf中，[global] 全局配置，优先级最低；［homes] 用户家目录配置；［printers] 打印机相关；
+			[global]
+				workgroup = MYGROUP
+				server string = Samba Server Version %v
+				security = user                        ＃模式，验证用户名密码
+				encrypt passwords = Yes                ＃密码加密存储
+				passdb backend = tdbsam                ＃密码存储方式 
+				username map = /etc/samba/smbusers      ＃虚拟用户
+				log level = 0                          ＃日志级别
+				log file = /var/log/samba/%m.log        ＃日志目录
+				max log size = 50
+				cups options = raw                      ＃打印机相关
+
+			[homes]
+				comment = Home Directories for %S      #%S 为通配符，当前登录用户
+				guest ok = No
+				valid users = %S
+				force user = %S                        #只当前登录用户可写
+				writeable = Yes
+				browseable = No                        #共享其他人不可见
+				[printers]
+				comment = All Printers
+				path = /var/spool/samba
+				guest ok = No
+				printable = Yes
+				browseable = No
+
+			还可以自定义配置如
+
+			[sm22]
+				comment = data dir for sm2
+				path = /data/sm2
+				guest ok = No
+				valid users = sm2
+				writeable = Yes
+				directory mask = 0700
+				browseable = No
+
+			1，comment:针对共享资源所做的说明文字。默认值为空字符串。
+				例如：comment = dir for todathero  共享这个目录为todayhero这个用户
+			2，path:若共享的资源使目录，则使指定该目录的位置
+				例如：path = /tmp: 共享这个目录
+			3，guest ok:是否循序用户不使用账号和密码访问此资源
+				例如：
+					guest ok = yes  允许用户不使用账号和密码访问此资源
+					guest ok = on   不允许用户不使用账号和密码访问此资源
+			4，hosts allow:设置连接主机的地址		
+				例如：
+					hosts allow = 192.168.0. server.abc.com  
+					意思是说允许来自192.168.0. 或server.abc.com的主机链接
+					
+			5，hosts deny:设置禁止链接的主机地址		
+				例如：
+					hosts deny = 192.168.2. 
+					意思是说不允许来自192.168.2。主机访问此samba服务器的资源
+			
+			6，read only:用于设置共享的资源是否为只读
+				例如：
+					read only = yes : 允许只读
+					read only = no : 不仅仅只读，并且可写。
+			
+			7，writable:设置是否允许写入
+				例如：
+					writable = yes	允许写入
+					writable = no   不允许写入
+			
+			8，browseable:设置用户是否可以看到此共享资源
+				例如：
+					browseable = yes	允许用户看到此资源
+					browseable = no		不允许用户看到此资源
+					
+			9，available:设置是否启用资源共享
+				例如：
+					available = yes      启用资源共享
+					available = no       不启用资源共享
+					
+		samba用户管理
+			1, 添加系统用户
+				useradd -s /sbin/nologin test1  #test1不能登录操作系统
+				smbpasswd -a test1              #添加test1至samba数据库  
+			2, 添加大量的虚拟用户(sm11、sm12、sm13..)映射至test2用户
+				useradd -s /sbin/nologin  test2  
+				smbpasswd -a test2
+				vim /etc/samba/smbusers
+					test2 = sm11  sm12  sm13  sm14  sm15  sm16
+
+
+		samba为特殊用户建立单独配置文件
+			1, 为 sm2 用户创建单独配置文件
+				cp /etc/samba/smb.conf  /etc/samba.conf.sm2
+		  
+			2, 编辑 /etc/samba/smb.conf 文件
+				vim /etc/samba/smb.conf
+				[global]
+				config file = /etc/samba/smb.conf.%U
+		  
+			3, 编辑 /etc/smb.conf.sm2  文件，去掉 browseable = no  这样  sm2  在访问服务器时，sm22 服务可见
+				[sm22]
+				  comment = data dir for sm2
+				  path = /data/sm2
+				  guest ok = No
+				  valid users = sm2
+				  writeable = Yes
+				  directory mask = 0700
+			
+			4，重启samba服务
+
+		注意：若还是无法访问文件夹，或者无权限操作的话，需要设置一下selinux配置：
+			第一种方法：
+				setenforce 0
+				vi /etc/selinux/config
+			将SELINUX=enforcing改为SELINUX=disabled为开机重启后不再执行setenfore节约光阴。
+		    
+			第二种方法：
+				先查看 samba_enable_home_dirs 和 samba_export_all_rw 是否开启 == on
+				getsebool  -a  | grep  samba				查看selinux配置
+				setsebool -P samba_enable_home_dirs on		开启配置
+				setsebool -P samba_export_all_rw on			开启配置
+				getsebool  -a  | grep  samba				再次查看配置是否开启
+				
+			配置完后重启samba服务器即可。
+		  
+		samba服务器配置可参考：http://blog.chinaunix.net/uid-23069658-id-3142052.html
+
+
+linux系统环境变量配置存放路径
+	系统环境变量配置文件： /etc/profile
+	系统自启动配置文件：/etc/bashrc
+	用户环境变量配置文件：/用户文件夹/.bash_profile
+	用户自启动配置文件：/用户文件夹/.bashrc
+	
+	添加临时环境变量：
+		命令：export PATH=$PATH:追加路径
+			例如：
+			export PATH=$PATH:$HOME/bin:/root/test/t1
+				解释：
+					输出环境变量PATH 引用原来的值$PATH 
+					$HOME表示工作主目录
+					:是路径分隔符
+				已定义好的环境变量：
+					SHELL : 默认shell
+					PATH  : 路径
+					USER  : 当前登录用户的用户名
+		
+		echo 变量名		显示变量内容
+			例如：
+				echo $PATH
+				echo $USER
+				echo $SHELL
+		
+		注意：修改环境变量文件后，执行 source /etc/profile（环境变量文件名），即可生效
+		
+		
+
+linux常用通配符号：
+	*   代表多个字符
+	?   代表一个字符或数字
+	[]  代表一个范围
+	\	转义字符
+	
+
+linux启动过程讲解
+	启动步骤如下：
+		1，BIOS自检
+		2，启动CRUB/LILO 
+		3，运行LINUX内核并检测硬件
+		4，运行系统的第一个进程init
+		5，init读取系统引导配置文件/etc/inittab中的信息进行初始化
+		6，/etc/rc.d/rc.sysinit系统初始化脚本
+		7，/etc/rc.d/rcX.d/[KS]* - 更具运行级别X配置服务
+			终止以"K"开头的服务
+			启动以"S"揩油的服务
+		8，/etc/rc.d/rc.local 执行本地特殊配置
+		9，其他特殊服务
+	
+
+linux网卡设置
+	注意：在实际开发中Linux/windows服务器的网卡不要随便禁用，一旦禁用终端链接马上断开，
+一但断开就会连接不上。
+
+	1，网卡配置文件的位置
+	在linux中的网卡不想windows系统中那样以图标的形式进行配置，在命令行中存在单独的配置文件。
+	位置在：/etc/sysconfig/network-scripts/
+	每个网卡都对应着一个配置文件。例如ifcfg-eth0对应着eth0这个网卡，ifcfg-lo对应着lo这个网卡。
+	
+	2，禁用/启用网卡
+	禁用网卡：ifdown 设备名称(网卡名称)
+		例如: ifdown eth0
+	启动网卡：ifup 设备名称(网卡名称)
+		例如: ifup eth0
+	
+	注意：在实际项目中，不到迫不得已，不要使用该命令。
+	
+	
+在liunx中开启/关闭/重启一个服务/进程，都有一个比较固定的格式：
+	命令：server 服务名称 start/stop/restart
+		比如：
+			service sshd stop   关闭ssh协议进程
+	
+
+如何在linux系统下升级已安装软件？
+	命令：yum -y update
+		解释：-y 表示确定
+	
+
+linux系统软件安装方式
+	1，二进制软件安装
+		1.1 rpm方式安装
+			该方式软件安装本质与windows系统软件安装方式一致，就是把软件包里边的二进制
+		代码文件复制到系统指定目录（C://Program Files）的过程
+			优点：软件安装非常方便，快速
+			缺点：软件的哥哥组成部分非常固定，不灵活。需要手动解决依赖关系
+		1.2 yum智能安装
+			该方式类似于360软件管家里边的“一键安装”。比较智能
+			该方式条件：1，可以上网。2，若无法上网，可以通过配置把(二进制码)软件放到指定位置
+				好处：方便，一键安装，无需考虑软件依赖
+				> yum install php
+	2，源码编译安装
+		 该软件安装本质：从网络下载的软件，内部文件的内容都是源码内容。
+		 源码文件--（编译工具）--二进制码文件--复制--系统指定目录
+		 软件安装的时候：
+		 1，把“源码内容”文件编译为“二进制代码”文件。
+		 2，再把编译后的“二进制代码文件”复制到系统指定目录
+			 优点：
+				1，软件内部各个组成部分可以灵活配置（例如php里边有gd/xml/jpeg/png等各个组成部分，都可以灵活选取）
+				2，该方式安装的软件整体运行速度，效果要高些。
+			 缺点：安装稍麻烦
+		  
+		  
+若要使用ftp软件链接linux，则linux系统必须安装vsftpd软件！
+	安装步骤：
+		1，默认光驱中携带有(参考光盘挂载):
+			使用命令查看（前提必须在软件包目录中）：ls | grep vsftpd
+			若没有的话，使用yum方式安装： yum install vsftpd
+		2,安装完成后，检查安装
+			rpm -qa | grep vsftpd
+			若存在则安装成功
+		3，开启ftp服务
+			servcer vsftpd start
+		4，查看ftp相关服务进程
+			ps -A | grep ftp
+		5，测试本机与linux的ftp端口 21 是否通畅
+			如果不通畅：
+				解决：
+					1,关闭linux系统防火墙（执行指令 > setup） 或者 service iptables stop
+					2,开放21端口。配置文件在/etc/sysconfig/iptables
+			注意：若FTP协议无法连接，可以尝试SFTP-SSH协议。
+		
+			若还是无法连接，则设置selinux
+				编辑：vim /etc/selinux/config   , 把enforcing改为disabled
+				完成编辑后并reboot重启系统，并启动ftp服务。
+		
+		ftp两个优化：
+			1，对使用ftp用户的限制
+				两个文件对用户进行限制：
+				/etc/vsftpd/user_list
+				/etc/vsftpd/ftpusers
+			若想指明不允许登陆ftp的用户，则在以上两个文件添加不允许登陆ftp的用户名即可。
+
+			2，限制普通用户只能访问自己的“家目录”
+				修改配置文件 /etc/vsftpd/vsftpd.conf
+					在97行开启：chroot_list_enable=YES						开启限制访问配置
+					在99行开启：chroot_list_file=/etc/vsftpd/chroot_list	配置文件路径
+				把需要访问自己家目录的用户信息配置到文件/etc/vsftpd/chroot_list中
+				创建chroot_list文件，并写入只允许访问家目录的用户即可。（一行一个用户）		
+		
+		
+如何在linux上查看软件的下载地址？
+	命令：yum info 软件名
+		例如：yum info zlib
+		输出：（其中URL就是软件的下载地址）
+			已安装的软件包
+			Name        : zlib
+			Arch        : x86_64
+			Version     : 1.2.3
+			Release     : 29.el6
+			Size        : 149 k
+			Repo        : installed
+			From repo   : anaconda-CentOS-201605220104.x86_64
+			Summary     : The zlib compression and decompression library
+			URL         : http://www.gzip.org/zlib/
+			License     : zlib and Boost
+			Description : Zlib is a general-purpose, patent-free, lossless data compression
+						: library which is used by many different programs.
+
+			可安装的软件包
+			Name        : zlib
+			Arch        : i686
+			Version     : 1.2.3
+			Release     : 29.el6
+			Size        : 73 k
+			Repo        : base
+			Summary     : The zlib compression and decompression library
+			URL         : http://www.gzip.org/zlib/
+			License     : zlib and Boost
+			Description : Zlib is a general-purpose, patent-free, lossless data compression
+						: library which is used by many different programs.
+
+
+在linux中gcc编译器的安装
+	在光盘中找到需要安装的gcc软件
+		ppl-0.10.2-11.el6.x86_64.rpm
+		cloog-ppl-0.15.7-1.2.el6.x86_64.rpm		gcc软件依赖
+		cpp-4.4.7-17.el6.x86_64.rpm				gcc软件依赖
+		mpfr-2.4.1-6.el6.x86_64.rpm
+		gcc-4.4.7-17.el6.x86_64.rpm
+		gcc-c++-4.4.7-17.el6.x86_64.rpm
+		gcc-java-4.4.7-17.el6.x86_64.rpm
+		libstdc++-devel-4.4.7-17.el6.x86_64.rpm
+						
+		安装顺序：	
+			1，ppl-0.10.2-11.el6.x86_64.rpm
+			2，cloog-ppl-0.15.7-1.2.el6.x86_64.rpm
+			3，mpfr-2.4.1-6.el6.x86_64.rpm
+			4，cpp-4.4.7-17.el6.x86_64.rpm
+			5，gcc-4.4.7-17.el6.x86_64.rpm
+			6，gcc-c++-4.4.7-17.el6.x86_64.rpm
+			7，libstdc++-devel-4.4.7-17.el6.x86_64.rpm
+			8，gcc-c++-4.4.7-17.el6.x86_64.rpm
+			9，gcc-java-4.4.7-17.el6.x86_64.rpm
+		
+		安装成功后，写一个c语言（hello.c）文件：
+			内容如下: #include<stdio.h>
+				main(){
+					printf("hello word\n");
+				}
+			保存退出。
+			使用gcc hello.c，在查看目录，若出现a.out文件，则运行./a.out，可运行表示安装成功。
+
+
+linux设置服务开启启动：
+	方案一：
+		chkconfig --add 服务名称
+		chkcoonfig 服务名称 on
+	
+		例如：
+			chkconfig --add mysqld
+			chkconfig mysqld on
+			
+	方案二:
+		编辑: /ect/rc.d/rc.local文件
+		在文件中增加启动相关服务的命令，例如：
+		/usr/local/httpd24/bin/apachectl start
+		/usr/local/mysql/bin/mysql_safe --user=mysql &
+		service vsftpd start
+		保存退出，重新登录即可
+		
+		
+课外知识：
+	建议读读 理查德·史蒂文斯 写的书籍
+		  
+	./configure --prefix=/usr/local/httpd24 --enable-modules=all --enable-mods-shared=all --enable-so --with-apr=/usr/local/apr --with-apr-util=/usr/local/apr-util --with-pcre=/usr/local/pcre --with-included-apr
+		
+		./configure --prefix=/usr/local/httpd24 \
+		--enable-modules=all \
+		--enable-mods-shared=all \
+		--enable-so \
+		--with-apr=/usr/local/apr \
+		--with-apr-util=/usr/local/apr-util \
+		--with-pcre=/usr/local/pcre
+		
+		--prefix  				安装路径
+		--enable-modules 		指定开启的功能模块
+		--enable-mods-shared 	把全部的功能模块代码内容都编译到“apache本身软件”内部（apache本身软件会变大，但是在调用相关模块的时候速度会很快）
+								相对应类型：static静态类型：apache内部不要编译许多模块代码，其他模块diamagnetic都独立存在，需要什么模块就立即include引入。（apache软件本身会非常小巧，其运行速度会很快）
+		--enable-so				可以识别so后缀的模块文件	  
+
+./configure --prefix=/usr/local/gd \
+--with-jpeg=/usr/local/jpeg/ \
+--with-png=/usr/local/libpng/ \
+--with-freetype=/usr/local/freetype/ \
+--with-zlib
+
+
+
+cmake . \
+-DCMAKE_INSTALL_PREFIX=/usr/local/mysql \
+-DMYSQL_DATADIR=/usr/local/mysql/data \
+-DWITH_BOOST=/usr/local/boost_1_59_0 \
+-DSYSCONFDIR=/etc \
+-DENABLED_LOCAL_INFILE=1 \
+-DDEFAULT_CHARSET=utf8 \
+-DDEFAULT_COLLATION=utf8_general_ci \
+-DEXTRA_CHARSETS=all
+
+
+./mysqld --initialize-insecure \
+--user=mysql \
+--basedir=/usr/local/mysql \
+--datadir=/usr/local/mysql/data
+
+
+./bin/mysql_ssl_rsa_setup
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		  
+		  
+		  
+		  
+		  
+		  
+		   
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  

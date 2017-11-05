@@ -449,7 +449,7 @@ linux命令
 			3，异常关闭处理
 				当一个文件在vim中进行打开，打开之后没有正常关闭（直接关闭远程链接），下次打开该文件，
 			会提示错误信息。这是需要删除 原有文件名.swp 文件，即可恢复。
-				解释：.wsp文件 通常都是 交换/缓存文件
+				解释：.swp文件 通常都是 交换/缓存文件
 			4，:wq和:x 的区别
 				解释：:wq和:x都用于保存退出文件编辑，而:wq不管文件是否修改，只要打开之后使用:wq保存，都会更新文件的修改时间。
 				而:x保存的文件，在文件无发生变化的时候不会更新文件的修改时间。
@@ -567,12 +567,11 @@ linux命令
 	
 	十三，系统时间管理命令
 		date					显示系统时间
-		date MMDDHHMMCCYY.SS	更改系统时间
-			解释：date 月月日日时时分分年年年年.秒秒
-			例如：date 102513592017.20
-		date -s "时间格式"
-			例如:
-				date -s "2015-07-08 15:25:34"
+		例如：			
+			date 102513592017.20			设置系统时间【月月日日时时分分年年年年.秒秒】
+			date -s "2015-07-08 15:25:34"	设置系统时间
+			date +%Y						显示当前年份信息
+	
 		hwclock -w				将更新写入CMOS时间，通常结合date -s 使用
 			如：date -s '20115-08-25 15:30:06'
 				hwclock -w		把新设置的时间写入CMOS里
@@ -752,6 +751,130 @@ linux命令
 					seffacl -d test.txt
 						删除所有的附加ACL条目
 	
+		
+		十九，管道与重定向
+			重定向符号包括：<,>,<<,>>,|
+			输出重定向可以使用>或者>>符号，使用>将输出导入文件，如果文件不存在则，
+		则创建该文件，如果文件已经存在，则会覆盖该文件内容；而是用>>可以将输出追加
+		至文件；对应的错误信息的重定向需要使用2>或者2>>符号实现。输入重定向可以使用
+		<符号，它可以帮助我们从文件中提取输入信息。
+		
+			例如：
+				Shell># ls > list.txt			# 将输出保存到list.txt文件，屏幕无输出
+				Shell># hostname >> list.txt	# 将主机名追加至list.txt文件
+				Shell># ls -l abc install.log	# 查看文件信息，abc不存在，而install.log存在
+				Shell># ls -l abc install.log 2> error.txt
+					# 仅将错误信息写入error.txt文件，但不影响正确输出
+				Shell># ls -l abc install.log > all 2>&1
+					# 标准输出与错误输出均导入至all
+				Shell># ls -l abc install.log >> all 2>&1
+					# 标准输出与错误输出均追加导入至all
+				Shell># ls -l abc install.log &> all
+					# 标准输出与错误输出均导入至all
+	
+			重定向技巧：
+				Shell># echo "pass" | passwd --stdin root > /dev/null		# 屏蔽无意义输出
+				Shell># id tom >> user 2>> error
+					# 检测系统是否存在tom用户，若存在，则tom相关信息追加记录user文件中,否则则记录error文件中
+				Shell># firefox		
+					# 前端启动火狐浏览器，当前控制台将暂时无法使用
+				Shell># firefox &
+					# 后台运行浏览器，不影响当前Shell使用（& 可以使该进程进入后台执行）
+				Shell># ls /tmp ; ls /root ; ls /home;
+					# 所有命令按顺序执行（不管前面的命令是否成功，后面的命令一定正常执行）
+				Shell># ls text.txt && cat test.txt
+					# 当ls指令执行成功，才会执行cat指令
+				Shell># gedit || vim
+					# 如果有gedit编辑器，则打开程序，否则打开vim编辑器
+				Shell># id tom &> /dev/null && echo "Hi,tom" || echo "Nosuch user"
+					# 首先通过&>重定向符将id命令的所有输出屏蔽，然后使用&&与||来判断id命令
+				是否执行成功，成功就显示问候语，失败显示没有该用户
+				
+		
+			作业控制技巧：
+				使用&进入后台执行的程序，可以使用jobs命令查看这些后台进程，并且会为每一个
+			这样的进程分配一个编号，通过fg <编号>的形式可以将这些后台进程再次调回前台执行。
+				例如：
+				Shell># firefox &
+				Shell># jobs
+				[1]+  运行中               firefox &
+				Shell># fg 1
+				
+		
+			花括号{}的使用技巧
+				通过括号扩展可以生成命令行或者脚本需要的字串，括号中可以包含连续的序列或者
+			使用逗号分隔的多个项目，连续的序列宝库奥一个起点与一个终点，并使用“..”分隔。
+			例如：
+				Shell># echo {a,b,c}
+				Shell># echo user{1,5,8}
+				Shell># echo {0..10}
+				0 1 2 3 4 5 6 7 8 9 10
+				Shell># echo {0..10..2}
+				0 2 4 6 8 10
+				Shell># echo a{2..-1}
+				a1 a2 a0 a-1
+				Shell># mkdir /tmp{dir1,dir2,dir3}
+				Shell># ls -ld /tmp/dir{1,2,3}
+				Shell># chmod 777 /tmp/dir{1,2,3}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		
+				
+				
+	
 	
 linux通过systemctl管理服务
 	如果是通过RPM或者YUM安装，则应用程序一般会在/usr/lib/systemd/system/目录下创建
@@ -784,8 +907,8 @@ linux	目录结构（重要目录）
 	/var		存放系统中经常变化的文件
 	/boot		存放引导相关的文件（存放linux操作系统启动时所需使用的文件）
 	/usr		软件安装默认文件夹（系统应用程序和相关文件）
-		/usr/bin	许多"指令" 对应的可"执行程序文件"目录
-		/usr/sbin	root用户执行的指令 对应的 可"执行程序文件"目录
+	/usr/bin	许多"指令" 对应的可"执行程序文件"目录
+	/usr/sbin	root用户执行的指令 对应的 可"执行程序文件"目录
 	/tmp		系统的临时目录
 	/proc		内存映射目录，该目录可以查看系统的相关硬件信息
 	/lib		系统资源文件类库目录
@@ -1909,20 +2032,234 @@ linux内核模块设置
 		使用sysctl -p 命令可以使这些设置立刻生效
 
 
+		
+配置CentOS电脑不休眠
+	配置 xorg.conf，且不能出错，否则系统可能会起不来，所以配置时要格外小心。
+	vi /etc/X11/xorg.conf
+	添加以下内容
+		Section "ServerFlags"
+			   Option "BlankTime" "0"
+			   Option "StandbyTime" "0"
+			   Option "SuspendTime" "0"
+			   Option "OffTime" "0"
+		EndSection
+		Section "Monitor"
+			   Option "DPMS" "false"
+		EndSection
+	重启CentOS系统即可！
 
 
 
+linux变量的使用
+	一，自定义变量
+		在Shell中定义变量的语法格式为：name=[value]。[]代表可选
+	如果value没有指定，变量将被赋值为空字符串，变量定义后使用<$变量名称>来调用变量的值。
+	默认NAME的值是可以被修改的，但可以通过设置typeset为这个变量添加只读属性来防止误操作。
+		变量名称格式：首字母不可以为数字，建议全大写
+		
+		例如：
+			Shell># NAME=tomcat
+			Shell># echo $NAME
+			tomcat
+			Shell># typeset -r NAME
+			Shell># NAME=jeery
+			bash: NAME :readonly variable
+			
+			如果希望预定义一个变量，但暂时不赋值给它，可以使用declare命令
+				Shell># declare INT_NUMBER
+				Shell># typeset -i INT_NUMBER		# -i 设置为整数变量
+				Shell># INT_NUMBER=test
+				Shell># echo $INT_NUMBER
+				Shell># INT_NUMBER=200
+				Shell># echo $INT_NUMBER
+			 
+			此外，还可以通过read命令来设置变量，read命令从标准中读取变量值，
+		使用-p选项添加相应提示信息
+			Shell># read P_NUMBER								# 回车后输入要赋值给P_NUMBER的值
+			Shell># echo $P_NUMBER
+			Shell># read -p "Please input a number:" P_NUMBER	# 回车后：在提示符后输入要赋值给变量的值
+			Shell># echo $P_NUMBER
+			Shell># set											# 查看当前系统中设置的所有变量及值
+			Shell># unset P_NUMBER								# 删除变量
 
+			
+	二，变量的使用范围
+		使用name=[value]的形式定义的变量默认仅在当前Shell中有效。
+		可以使用export命令将变量放入环境中 或者 直接设置换将变量。（重启无效）
+		例如：
+			Shell># TEST=pass
+			Shell># echo $TEST
+			Shell># bash							# 在当前shell下开启新进程bash
+			Shell># echo $TEST						# 查看变量值为空
+			Shell># exit
+			Shell># export TEST						# 将已有用户变量添加至环境
+			Shell># export NAME=tom					# 直接定义环境变量
+			Shell># export PATH=/usr/local:$PATH	# 追加环境变量
+		
+		
+		比较常用的系统变量名称及其含义：
+		BASHPID		当前bash进程的进程号
+		GROUPS		当前用户所属组的组ID
+		HOSTNAME	当前主机的主机名称
+		PWD			当前工作目录
+		OLDPWD		前一个工作目录
+		RANDOM		0~32767之间的随机数
+		UID			当前用户的ID号码
+		HISTSIZE	命令历史的记录条数
+		HOME		当前用户的家目录
+		PATH		命令搜索路径
+		PS1			主命令提示符
+		PS2			次命令提示符
+		
+		
+	三，位置变量
+		位置变量的使用一般提现在脚本中。
+		位置变量使得在脚本中命令可以调用运行脚本时不通位置的参数，参数一般使用空格分隔。
+		$0	代表当前Shell程序的文件名称
+		$n	$1代表运行Shell程序时的第一个参数，$2为第二个参数，依次类推（范围为$1~$9）。
+		$#	代表Shell程序所有的参数个数；$*与$@均代表所有参数的内容，区别是$*将参数作为
+			一个整体，而$@将所有参数分别作为个体看待
+		$$ 	代表当前进程的ID号码
+		$?	表示程序的退出代码(一般0代表命令执行成功，非0代表命令执行失败)
+		
+		例如：
+		[root@dong tmp]# vim test.sh				# 编辑脚本内容如下
+			#!/bin/bash
+			#This is test script for parameter!
+			echo "This is the file name :$0"
+			echo "This is first parameter: $1"
+			echo "This is second parameter: $2"
+			echo "This is the number of all parameter: $#"
+			echo "This is the all parameter: $*"
+			echo "This is the all parameter: $@"
+			echo "This is PID: $$"
+		[root@dong tmp]# bash /tmp/test.sh a b c	# 允许该脚本使用3个参数
+		This is the file name :/tmp/test.sh	
+		This is first parameter: a					# 结果显示第一个参数为 a
+		This is second parameter: b					# 结果显示第二个参数为 b
+		This is the number of all parameter: 3		# 结果显示所有参数的个数
+		This is the all parameter: a b c			# 所有参数的内容为'a b c'
+		This is the all parameter: a b c			# 所有参数的内容为'a' 'b' 'c'
+		This is PID: 5587							# 当前进程PID为5587
+		
 
-
-
-
-
-
-
-
-
-		  
-		  
-		  
-		  
+	四，变量的展开替换
+		linux中一般可以使用${变量名}的形式展开变量的值
+		${varname:-word}			如varname存在且非null，则返回其值，否则返回word
+		${varname:=word}			如varname存在且非null，则返回其值，否则设置为word
+		${varname:?message}			如varname存在且非null，则返回其值，否则显示varname:message
+		${varname:+word}			如varname存在且非null，则返回word，否则返回null
+		${variable#key}				从头开始删除关键词，执行最短匹配
+		${variable##key}			从头开始删除关键词，执行最长匹配
+		${variable%key}				从尾开始删除关键词，执行最短匹配
+		${variable%%key}			从尾开始删除关键词，执行最长匹配
+		${variable/old/new}			将old替换为new，仅替换第一个出现的old
+		${variable//old/key}		将old替换为new，替换所有old
+		USR=$(head -1 /ect/passwd)	将$()中执行的命令结果赋值给USR
+		
+		例如：
+			echo ${USR#*:}			# root:x:0:0:root:/root:/bin/bash
+				输出： x:0:0:root:/root:/bin/bash
+			echo ${USR##*:}			# root:x:0:0:root:/root:/bin/bash
+				输出： /bin/bash
+				
+				
+	五，数组
+		数组的索引一般从0开始的整数，且没有大小限制。
+		创建数组有两种方式：
+		第一种：name[subscript]=value的语法格式定义变量自动创建索引数组，
+	subscript必须大于或等于0的整数或者表达式。
+		第二种：name=(value1 value2 ... valuen)的语法格式创建。
+		
+		可以使用declare -a <name>预定义一个空数组变量
+		
+		数组的调用：
+			${name[subscript]}			# 索引格式来调用数组变量的值。
+			${name[*]}或者${name[@]}	# 将调用所有数组的值
+			${#name[subscript]}			# 可以返回${name[subscript]}长度
+			${#name[*]}或者${name[@]}	# 返回数组中元素的个数
+		
+			例如：
+				[root@dong tmp]# A[1]=11
+				[root@dong tmp]# A[2]=22
+				[root@dong tmp]# A[3]=33
+				[root@dong tmp]# echo ${A[1]},${A[2]},${A[3]}	# 输出 11,22,33
+				[root@dong tmp]# echo ${A[1]}:${A[2]}:${A[3]}	# 输出 11:22:33
+				[root@dong tmp]# echo ${A[*]}					# 输出 11 22 33
+				[root@dong tmp]# echo ${A[@]}					# 输出 11 22 33
+				[root@dong tmp]# B=(aa bbb cccc)
+				[root@dong tmp]# echo ${#B[0]}					# 输出 2
+				[root@dong tmp]# echo ${#B[1]}					# 输出 3
+				[root@dong tmp]# echo ${#B[2]}					# 输出 4
+				[root@dong tmp]# echo ${#B[@]}					# 输出 3
+				
+		
+	六，算数运算与测试	
+		$((x+y))			加法运算
+		$((x-y))			减法运算
+		$((x*y))			乘法运算
+		$((x%y))			除法运算
+		$((x/y))			取余运算
+		$((x++))			自加运算
+		$((x--))			自减运算
+		$((x**y))			幂运算
+		
+		此外expr工具也可以实现类似的运算：
+			expr x + y
+			expr x - y
+			expr x * y
+			expr x / y
+			expr x % y
+		
+		Shell除了上面提供的算术运算外，还提供了一些判断功能，使用Bash内置
+	命令test即可实现测试工作或者使用[ 测试表达式 ]，两种方式的最终效果相同。
+		注意：使用[ 表达式 ]的时候记得在表达式两边都要留有空格。
+		
+		常用的测试条件：
+		-d FILE					FILE是否存在且为目录
+		-f FILE					文件是否存在，且为普通文件
+		-w FILE					文件是否存在且可写
+		-s FILE					文件是否存在且非空
+		-e FILE					文件是否存在
+		-r FILE					文件是否存在且可读
+		-x FILE					文件是否存在且可执行
+		-h FILE					文件是否为链接文件
+		-z STRING				字符串长度为0
+		-n STRING				字符串长度非0
+		STRING1 = STRING2		字符串相等	
+		STRING1 != STRING2		字符串不相等
+		INTER1 -eq INTER2		整数1等于整数2
+		INTER1 -gt INTER2		整数1大于整数2
+		INTER1 -lt INTER2		整数1小于整数2
+		INTER1 -ge INTER2		整数1大于或等于整数2
+		INTER1 -le INTER2		整数1小于或等于整数2
+		INTER1 -ne INTER2		整数1不等于整数2
+		
+		例如：
+			[root@dong tmp]# test -d /etc/ && echo "Y" || echo "N"			# etc是目录就显示Y，否则显示N
+			[root@dong tmp]# test -d /etc/passwd && echo "Y" || echo "N"
+			[root@dong tmp]# [ -d /etc/ ] && echo "Y" || echo "N"
+	
+	
+小知识：
+	使用echo的时候，若想在echo里执行命令的话，可以使用反引号或者$()包含命令.
+	例如：
+		echo "Today is `date +%D`"
+		echo "Today is $(date +%D)"
+		
+		
+		
+Linux使用正则表达式
+	支持正则表达式命令或工具如下：
+	编辑工具	  基本正则表达式		扩展正则表达式
+	grep				OK					  NO
+	egrep				OK					  OK
+	vi					OK					  NO
+	sed					OK					  NO
+	awk					OK					  OK
+		
+		
+		
+		
+		
+		

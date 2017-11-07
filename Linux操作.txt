@@ -599,8 +599,7 @@ linux命令
 		zip 					 压缩文件
 			例如：
 				zip file.zip *   					把“当期文件夹内所有文件”压缩成file.zip文件
-				zip -m file.zip to.txt 				把to.txt压缩成file.zip文件，然后自动删除to.txt文件
-				zip -r file.zip *					将当前目录下的子目录一起压缩。
+ 				zip -r file.zip *					将当前目录下的子目录一起压缩。
 				zip -j file.zip * 					忽略子目录内容压缩
 				zip -n .mpg: .jpg:.gif:				将已压缩的活没有必要压缩的去掉再压缩。
 					解释：第一种文件中间要用“: ”分开
@@ -1477,8 +1476,9 @@ tab				用于补全文件名或者文件夹名。若连续按下两次，列出�
 		注意：若还是无法访问文件夹，或者无权限操作的话，需要设置一下selinux配置：
 			第一种方法：
 				setenforce 0
+				或者
 				vi /etc/selinux/config
-			将SELINUX=enforcing改为SELINUX=disabled为开机重启后不再执行setenfore节约光阴。
+				将SELINUX=enforcing改为SELINUX=disabled为开机重启后不再执行setenfore节约光阴。
 		    
 			第二种方法：
 				先查看 samba_enable_home_dirs 和 samba_export_all_rw 是否开启 == on

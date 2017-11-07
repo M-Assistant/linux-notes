@@ -1,0 +1,150 @@
+隐藏PHP文件扩展名
+1,在php.ini文件里设置expose_php=off,可以减少能获得的有用信息。
+2，对Apache服务器中的配置文件http.conf进行配置，让类似于Apache的Web服务端调用PHP解释
+其他扩展名的PHP文件，也就是通过设置文件的拓展名来误导攻击者。
+
+把PHP隐藏为另一种语言：
+AddType application/x-httpd-php .asp .py .pl
+
+彻底隐藏PHP：
+AddType application/x-httpd-php .bop 133t
+
+
+设置过程：
+1，对Apache服务器中的配置文件httpd.conf进行配置，首先定位到如下位置：
+<ifModule dir_module>
+	DirectoryIndex index.php index.asp index.html index.htm
+</ifModule>
+增加一个扩展名 index.asp
+
+2，然后定位到如下位置：
+<ifModule mod_php5.c>
+#指定PHP文件的拓展名
+AddType application/x-httpd-php .asp .jsp .net
+#AddType application/x-httpd-php .php
+#AddType application/x-httpd-php .php3
+#AddType application/x-httpd-php-source .phps
+</ifModule>
+指定PHP文件的扩展名为 .asp .jsp 和 .net
+
+3，保存文件，并重新启动Apache服务器
+
+
+
+
+禁止复制和另存为网页内容
+1，实现禁止网页被另存为只要应用的是<iframe>标记，该标记的语法如下：
+<iframe src="文件" name="名称" scrolling="值" [noresize] frameborder="数值">
+参数说明：
+name:指定框架名称
+src:指定在框架中显示的网页文件
+frameborder:指定框架周围是否显示边框。取值1/0
+noresize:可选属性，如果指定该属性，则不能调整框架大小
+scrlloing:指定框架是否包含滚动条。取值yes/no/auto
+
+只用应用<iframe>标记的src属性，通过该属性在网页嵌入一个不存在的网页，这样当用用户在保存
+该网页时就会因为找不到指定的网页而无法保存。
+
+例如：<iframe src="*.html"></iframe>
+
+
+2，禁止网页复制主要应用的时鼠标键盘事件和编辑事件。
+（1）onmousedown 鼠标按下事件
+（2）onmouseup 鼠标按键被松开事件
+（3）oncopy 网页中复制内容时触发的事件
+（4）onselectstart 对文本的内容进行选择时触发的事件。在该事件中可以用return语句屏蔽文本的选择操作。
+例如：
+<body onselectstart="return false">
+	.....
+</body>
+
+以上方法并不能百分百的禁止用户获取网页内容............
+
+
+
+禁止某IP地址登陆网址：
+核心：主要截取IP地址的前3段进行比较。
+例如：
+禁止IP段为 192.168.22.xxx 登陆网址
+则只需要判断 192.168.22 就可以了。
+
+
+
+MYSQL优化表语句
+1，清除碎片：optimize table 表名1[,表名2,....]
+2，查询告诉缓存：select SQL_CACHE * from 表名;
+
+
+
+APACHE的优化
+1，HostnameLookups 设置为 Off.
+HostnameLookups 设置一旦启用，服务器会对客户端的主机名进行DNS查询，这将延迟对用户的响应。
+
+2，AllowOverride 设置为 Node
+一般将 AllowOverride 设置为Node,性能是最忧的。俄国该值被设置为A来了，目录设置允许被.htaccess文件覆盖，那么Apache会在
+文件名的每一个组成部分都尝试打开.htaccess文件。要避免这种情况，可以将AllowOberride设置为Node.
+
+3，配置DirectoryIndex
+当用户访问的URL以“/”结尾时，DirectoryIndex则指明了要寻找的资源列表。也就是说，Apache依次寻找index.php、index.html等。
+所以，DirectoryIndex指定的资源列表顺序与数量都会影响性能，建议数量不宜过多，把最常用的资源放在列表的最前面。
+
+4，设置KeepAlive
+KeepAlive 允许访问者在同一个TCP链接上完成多个请求，理论上有助于提升反应时间，因为访问者可以同一个链接上请求网页、图片和Javascript
+文件。遗憾的是，Apache对于每个请求都需要一个工作进程去处理。默认的每个工作进程持续打开15秒来处理每个请求，即使访问者已经不再使
+用它。这也就意味着系统在任何时间都是缺少工作进程的。
+不过，如果网站中有大量的图片和Javascript文件，通常最好还是让KeepAlive保持打开，然后做些调整。
+
+如果决定让KeepAlive保持打开状态，改变默认的KeepAlive Timeout 值就显得很重要了。它能避免链接没有使用时仍然处于打开状态。把KeepAlive Timeout
+的值改为3秒，这已经足够用户打开大部分必须的文件：
+KeepAlive Timeout 3
+
+如果让KeepAlive保持打开状态，同时应该增加MaxKeepAliveRequests 的值，设置为更大的值能够让每个链接处理更多的请求，从而提高效率。
+MaxKeepAliveRequests 200
+
+5,调整Timeout参数
+调整Timeout参数可以得到小的性能提升并减少DDOS攻击的效果。这个指令用于设置当Apache接收新的请求、处理请求和返回响应前需等待的秒数：
+Timeout 40
+
+6,如果没有必要记录日志，就把日志记录关闭。
+
+
+
+内容的压缩与优化
+
+关键技术：
+实现网页文件压缩应用的是PHP中的ob_statr('ob_gzhandler')。ob_start(）函数的作用是打开缓冲区，该函数有一个很大的特点是可以使用参数。
+ob_statr('ob_gzhandler')函数的作用是将输出内容压缩后方法缓冲区，然后通过ob_end_flush()函数输出缓冲区中的内容。
+
+
+以下示例演示压缩css文件
+代码：
+<?php
+if(extension_load('zlib')){	//检测服务器是否开启了zlib扩展
+	ob_start('ob_gzhandler');//打开缓冲区并执行压缩。
+}
+
+header("content-type:text/css");//设置要压缩的文件类型
+include('index.css');		//包含要压缩的css文件
+
+if(extension_load('zlib')){
+	ob_end_flush();		//输出缓冲区中的内容
+}
+?>
+
+
+在前台页面中，在链接样式表时调用压缩文件css.php，实际上是引用了压缩后的index.css文件：
+<link href="css.php" type="text/css" rel="stylesheet" />
+
+如果在页面中需要链接多个css文件样式表，那么在文件被压缩之后只需要调用一个PHP压缩文件即可，前提是压缩的PHP文件包含了
+所有要调用的CSS样式表。
+
+
+
+常见的程序漏洞和防护
+1，php.ini 中的 register_globals 参数 。默认情况下是关闭的：register_globals = Off
+建议：始终保持关闭状态。
+作用：register_globals 开启的话，则可以再URL上直接注册变量，危害网站安全。
+
+2，屏蔽错误信息，预防黑客攻击
+一：设置php.ini 文件中的 display_errors的值为 Off
+二：在错误代码前使用@来隐藏错误信息。

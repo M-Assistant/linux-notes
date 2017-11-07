@@ -2257,7 +2257,29 @@ Linux使用正则表达式
 	vi					OK					  NO
 	sed					OK					  NO
 	awk					OK					  OK
-		
+
+
+POSIX规范
+	字符集				含义
+	[:alpha:]			字母字符
+	[:alnum:]			字母与数字字符
+	[:cntrl:]			控制字符
+	[:digit:]			数字字符
+	[:xdigit:]			十六进制数字字符
+	[:punct:]			标点符号
+	[:graph:]			非空格字符
+	[:print:]			任何可以显示的字符
+	[:space:]			任何产生空白的字符
+	[:blank:]			空白与Tab键字符
+	[:lower:]			小写字符
+	[:upper:]			大写字符
+
+
+
+
+
+
+	
 		
 		
 		

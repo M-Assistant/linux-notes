@@ -470,6 +470,8 @@ linux命令
 					mount -a   									# 挂载fstab文件中尚未挂载的文件系统
 					mount /dev/cdrom /mnt/cdrom					# 将cdrom挂载到/mnt/cdrom目录
 					特别说明：在挂载光驱时,可直接使用 mount /mnt/cdrom
+					mount | column -t							# 列出所有的文件挂载系统
+					
 					
 				umount [挂载点 或者 挂载目录]					卸载命令
 					例如：umount /mnt/cdrom(挂载点)
@@ -1353,8 +1355,8 @@ tab				用于补全文件名或者文件夹名。若连续按下两次，列出�
 			5，配置网络使windows和linux在一个网段，ip互连
 				ifconfig 					查看网络信息
 				ifconfig eth0 192.168.0.34	设置eth0的ip为192.168.0.34
-				ifconfig eth0 down()		禁止使用eth0	
-				ifconfig eth0 up()			打开eth0
+				ifconfig eth0 down			禁止使用eth0	
+				ifconfig eth0 up			打开eth0
 					
 			6，关闭linux中的防火墙（用setup命令到text mode设置）	
 				为了让网络配置生效，运行下面的命令
@@ -1386,7 +1388,7 @@ tab				用于补全文件名或者文件夹名。若连续按下两次，列出�
 				force user = %S                        #只当前登录用户可写
 				writeable = Yes
 				browseable = No                        #共享其他人不可见
-				[printers]
+			[printers]
 				comment = All Printers
 				path = /var/spool/samba
 				guest ok = No

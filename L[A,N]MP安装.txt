@@ -1,15 +1,17 @@
 L[A,N]MP安装
 
 一，安装Apache
+
+1，安装Apache软件
 前言：由于使用的是源码安装apache,所以再安装之前需要安装某些依赖软件包。
 
-1，下载软件包
+1) 下载软件包
 [root@centos7 ~]# wget http://mirrors.tuna.tsinghua.edu.cn/apache//httpd/httpd-2.2.34.tar.gz
 [root@centos7 ~]# wget http://mirror.bit.edu.cn/apache//apr/apr-1.6.3.tar.gz
 [root@centos7 ~]# wget http://mirror.bit.edu.cn/apache//apr/apr-util-1.6.1.tar.gz
 [root@centos7 ~]# wget http://www.zlib.net/zlib-1.2.11.tar.gz
 
-2，安装软件
+2) 安装软件
 [root@centos7 ~]# yum -y install gcc autoconf automake make pcre \
 > pcre-devel openssl openssl-devel expat expat-devel
 [root@centos7 ~]# tar -zxvf httpd-2.2.34.tar.gz -C /usr/src
@@ -42,7 +44,7 @@ L[A,N]MP安装
 注：源码软件包中的configure 脚本用来检查系统环境、查找依赖文件、设置安装路径等操作,
 configure拥有很多选项，可以通过./configure --help查看该脚本支持的所有选项
 
-3，启动服务
+3) 启动服务
 [root@centos7 ~]# /usr/local/apache2/bin/apachectl start		# 启动Apache
 [root@centos7 ~]# netstat -luntp | grep http					# 查看进程
 [root@centos7 ~]# firewall-cmd --permanent --add-port=80/tcp	# 配置防火墙，开放80端口
@@ -67,6 +69,312 @@ graceful			启动httpd,不中断现有的http链接请求
 graceful-stop		关闭httpd,不中断现有的http链接请求
 
 
+2，配置文件解析
+	Apache配置文件默认位于/usr/local/apache2/conf目录下，在该目录下最主要的配置文件是
+httpd.conf，还有一些位于extra目录下的附加配置文件。此外，original目录中存有这些配置文件
+的所有副本。Apache HTTP Serve 主配置文件主要由指令以及容器组成，容器使用<容器名称>开始,
+以</容器名称>结尾，容器的指定一般在容器内有效。
+	下面是对主配置文件重点指定的具体描述：
+	
+	1，ServerRoot
+		ServerRoot 指定设置Apache软件的安装主目录，如果采用源码安装，则默认路径为/usr/local/apache2
+	
+	2，Listen
+		Listen 指令设置服务器监听的IP以及端口号，默认监听服务器本机所有的IP地址的80端口。
+	语法格式为：Listen [IP地址:]端口 [协议]，其中，IP地址与协议为可选项，默认监听所有的IP，
+	使用TCP协议。一个配置文件中可以多次使用Listen指令来开启多个端口
+	
+	3，LoadModule
+		Apache HTTP Server 的特色之一就是器功能多数是以模块方式加载的，如果希望Apache动态加载模块，
+	需要在编译Apache时通过--enable-so将mod_so以静态方式编译到Apache可信模块中，LoadModule 指令
+	的作用就是加载模块。
+	语法格式为：LoadModule 模块 模块文件名称。
+	其中的模块文件一般位于ServerRoot目录下的modules目录中
+	
+	4，LoadFile
+		LoadFile 指令的功能类似于LoadModule，区别在于LoadFile可以通过绝对路径加载modules目录下的
+	模块文件
+	
+	5，ServerAdmin
+		当网站出现故障时，需要为客户提供一个可以帮助解决问题的邮件地址，ServerAdmin指令的作用是提供
+	这样的邮件地址
+	
+	6，ServerName
+		ServerName 指令设置服务器本机的主机名称以及端口，对URL地址的重定向很重要
+		
+	7，DocumentRoot
+		该指令设置Web服务队客户端开放可见文件根目录，也就是客户端访问网站的根路径，默认为
+	/ur/local/apache2/htdocs
+	
+	8，ErrorLog
+		ErrorLog定位服务器错误日志的位置，默认使用相对路径，为ServerRoot目录下“logs/error_log”文件
+		
+	9，ErrorLogFormat
+		设置错误日志的格式，Apache HTTP Server预先定义了很多格式字串可以直接引用。
+		
+	10，CustomLog
+		该指令设置客户端访问日志文件名以及日志格式，默认为“log/access_log”，语法格式为：CustomLog 文件名 格式
+	
+	11，LogFormat
+		该指令描述用户日志文件格式，可以直接使用Apache预先设置的格式字串，一般我们会为LogFormat指令设置
+	的日志格式创建别名，然后通过CustomLog指令调用该日志格式别名。
+	
+	12，Include
+		Include指令允许Apache在主配置文件中加载其他的配置文件，该指令语法比较简单，在Include指令后直接跟上
+	其他附加配置文件路径即可
+	
+	13，Options
+		该指令为特定目录设置选项，语法格式为：Options [+|-]选项 [[+|-]选项]。选项可以设置为None,代表不启用任何
+	额外的功能，也可以使用如下常用选项。
+		All		：开启除MultiViews之外的所有选项
+		ExecCGI	：允许执行Options指定目录下的所有CGI脚本
+		FollowSymLinks : 允许Optinos指定目录下的文件链接到目录外的文件或目录
+		Indexs : 如果与URL对应的Options目录下找不到DirectoryIndex指定的首页文档，则Apache将会把当前目录的所有
+		文件索引出来。
+
+	14，Order
+		控制默认访问状态以及Allow与Deny的次序，如果使用Order deng,allow，则先检查拒绝，在检查允许，当拒绝与
+	允许有冲突时，语序优先，默认规则为允许。如果使用Order allow,deny，则先检查允许，在检查拒绝，当允许与拒绝
+	有冲突时，拒绝优先，默认规则为拒绝。
+		以下为具体案例：
+		Order deng,allow
+		Deny from all
+		先检查拒绝规则，在检查允许规则，默认为允许。这里的Deny from all代表拒绝所有，所以最终结果为拒绝所有。
+		
+		Order Allow,Deny
+		allow from all
+		先检查允许规则，在检查拒绝规则，allow from all 代表允许所有，所以最终结果为允许所有。
+		
+		Order Allow,Deny
+		allow from 192.168.0.1
+		先检查允许规则时允许192.168.0.1，其余为默认值，默认为拒绝所有，最终除去192.168.0.1外拒绝所有。
+		
+		Order Allow,Deny
+		allow from 192.168.0.1
+		Deny from All
+		先检查允许规则时允许192.168.0.1访问，但检查拒绝规则时为拒绝所有，而192.168.0.1也包含在all中。
+		当Allow与Deny有冲突时，以Order最后的股则覆盖其他的规则，本例将使用Deny规则覆盖Allow股则，最终
+		效果为拒绝所有。
+		
+		Order Deny,Allow
+		Deny from all
+		allow from 192.168.0.1
+		先检查拒绝规则，在检查允许规则，拒绝规则为拒绝所有，允许规则为允许192.168.0.1，拒绝与允许规则
+		有冲突的部分，本例将采用Allow的规则，最终可以实现仅允许192.168.0.1访问，其他任何主机均无法访问
+		Apache服务。
+		
+	15，IfDefine
+		IfDefine容器封装的指令仅在启动Apache时测试条件为真才会被处理，测试条件需要在启动Apache时通过
+	httpd-D定义。语法格式为：<IfDefine>指令</IfDefine>。
+		具体案例如下：
+		<IfDefine Memcache>
+			LoadModule mem_cache_module modules/mod_mem_cache.so
+		</IfDefine>
+		<IfDefine UseCache>
+			LoadModule cache_module modules/mod_cache.so
+		</IfDefine>
+		这样的配置可以让管理员采用多种配置方式启动Apache，启动Apache时，如果使用了httpd-DuseCache，则
+	Apache将加载mod_mem_cache 与 mod_cache模块，如果没有使用-D制定任何参数，则Apache将不加载这些模块。
+	
+	16，IfModule
+		使用IfModule容器可以封装仅在条件满足时才会处理的指令，根据指定的模块是否加载决定条件是否满足，
+	语法格式：<IfModule [!] 模块>指令</IfModule>
+		具体案例如下：
+		<IfModule unixd_module>
+		User daemon
+		Group daemon
+		</IfModule>
+		以上配置说明，仅在加载了unxid_module模块后，User daemon 与 Group daemon才会被Apache处理。
+		
+	17，Directory
+		该容器内的指定仅用于特定的文件系统目录，子目录以及目录下的内容。
+	语法格式为：<Directory directory-path>指定</Directory>，路径可以使用~配置正则表达式。
+		具体案例如下：
+		<Directory "/usr/local/apache2/htdocs">
+			Options Indexs FollowSymLinks
+		</Directory>
+		<Directory ~ "^/www/[0-9]{3}">
+			AllowOverride Node
+		</Directory>
+		以上案例中，Opions Indexs FollowSymLinks 仅对/usr/local/apache2/htdocs 目录有效，AllowOverrdie Node
+	仅对所有/www目录下包含三个数据的子目录有效。
+
+	18，<DirectoryMatch>
+		DirectoryMatch类似于Directory，但可以直接使用正则表达式匹配，无需像Directory一样使用~符号才可以匹配。
+		
+	19，Files
+		该容器类似于Directory容器，但Files容器内的指令仅用于特定的文件，语法格式为：<Files 文件名>指令</Files>。
+	与Directory类似，它可以使用~匹配正则表达式。
+	
+	20，FilesMatch
+		仅使用正则表达式匹配需要的问价，容器内的指令仅应用于匹配成功的特定文件。FilesMatch等同于使用了~符号
+	的Files。
+	
+	21，Location
+		Location容器内定义的指令仅对特定的URL有效，语法格式为：<Location URL-path | URL>指令</Location>。
+	如果需要使用正则表达式匹配URL，可以使用~符号。
+	
+	22，LocationMatch
+		LocationMatch 仅使用正则表达式匹配URL，等同于使用了~符号匹配的Location。
+
+	23，VirtualHost
+		设置服务器虚拟主机。虚拟主机是在一台服务器上同时运行多个Web业务，Apache HTTP Server 支持基于域名
+	以及基于IP虚拟主机类型。
+	语法格式：<VirtualHost IP地址:[端口号]>指令</VirtualHost>，IP地址可以使用*匹配服务器本地所有的IP地址。
+	在这之前，首先需要将主配置文件中的 Include conf/extra/httpd-vhosts.conf 语句开启，默认该行为注释，去除
+	# 符号即可。
+
+	
+3，虚拟主机应用案例
+	步骤：
+	1) 编辑httpd.conf文件，开启虚拟机支持。
+		[root@centos7 ~]# cp /usr/local/apache2/conf/httpd.conf /usr/local/apache2/conf/httpd.conf.bak
+		[root@centos7 ~]# sed -i "/#Include conf\/extra\/httpd-vhosts.conf/c Include conf\/extra\/httpd-vhosts.conf" \
+		> /usr/local/apache2/conf/httpd.conf
+	
+	2) 添加虚拟机配置
+		[root@centos7 ~]# /usr/local/apache2/conf/extra/httpd-vhosts.conf
+		<VirtualHost *:80>
+			ServerAdmin Jacob_test@gmail.com
+			DocumentRoot "/usr/local/apache2/htdocs/example"
+			ServerName www.example.com
+			ServerAlias web.example.com
+			ErrorLog "logs/www.example.com-error_log"
+			CustomLog "logs/www.example.com-access_log" common
+		</VirtualHost>
+
+		<VirtualHost *:80>
+			ServerAdmin Jacob_test@gmail.com
+			DocumentRoot "/usr/local/apache2/htdocs/abc"
+			ServerName www.abc.com
+			ErrorLog "logs/abc.com-error_log"
+			CustomLog "logs/abc.com-access_log" common
+		</VirtualHost>
+	
+	3) 添加hosts域名解析
+		[root@centos7 ~]# sed -i "`cat /etc/hosts | wc -l`a 127.0.0.1 www.example.com web.example.com" /etc/hosts
+		[root@centos7 ~]# sed -i "`cat /etc/hosts | wc -l`a 127.0.0.1 www.abc.com" /etc/hosts
+		
+	4) 为对应的虚拟机创建根目录，并创建测试文件。
+		[root@centos7 ~]# mkdir -p /usr/local/apache2/htdocs/{example,abc}
+		[root@centos7 ~]# echo "example.com" > /usr/local/apache2/htdocs/example/index.html
+		[root@centos7 ~]# echo "abc.com" > /usr/local/apache2/htdocs/abc/index.html
+		[root@centos7 ~]# firewall-cmd --permanent --add-port=80/tcp
+		[root@centos7 ~]# firewall-cmd --reload
+		[root@centos7 ~]# /usr/local/apache2/bin/apachectl restart
+
+
+4，https网站安全应用案例
+	一般情况下，网站使用的是明文传输模式。但这种传输方式不对数据进行加密，数据被窃取之后，容易导致
+网站进入危险状态，则这时需要使用SSL加密传输数据。Apache HTTP Server 通过mod_ssl模块来实现对SSL/TLS支持。
+	以下简单演示https网站的案例。
+	步骤：
+		a) 使用openssl生成证书签名【需要安装 openssl 和 openssl-devel 软件包】
+			[root@centos7 ~]# cd /usr/local/apache2/conf
+			[root@centos7 ~]# openssl genrsa -out server.key 2048						# 生成私钥
+			[root@centos7 ~]# openssl req -new -x509 -key server.key -out server.crt	# 根据私钥生成根证书
+			You are about to be asked to enter information that will be incorporated
+			into your certificate request.
+			What you are about to enter is what is called a Distinguished Name or a DN.
+			There are quite a few fields but you can leave some blank
+			For some fields there will be a default value,
+			If you enter '.', the field will be left blank.
+			-----
+			Country Name (2 letter code) [XX]:*CN*										# 国家名称
+			State or Province Name (full name) []:*Beijing*								# 省份
+			Locality Name (eg, city) [Default City]:*Beijing*							# 城市
+			Organization Name (eg, company) [Default Company Ltd]:*ABC*					# 组织名称
+			Organizational Unit Name (eg, section) []:*tech*							# 部门名称
+			Common Name (eg, your name or your server's hostname) []:*jacob*			# 主机名称
+			Email Address []:*jacobxx@gmail.com*										# 电子邮件
+	
+		b) 配置httpd.conf文件
+			部署TLS/SSL网站除了需要生成私钥与证书外，还需要修改Apache配置文件，主配置文件
+		中需要加载mod_ssl以及mod_socache_shmcb两个模块，同事使用Include 指令读取 conf/extra
+		目录下的httpd-ssl.conf配置文件。
+			[root@centos7 ~]# /usr/local/apache2/bin/httpd -M 		# 查看已加载模块（本实例在安装的时候，已编译并加载了ssl模块）
+			[root@centos7 ~]# sed -i "/#Include conf\/extra\/httpd-ssl.conf/c Include conf\/extra\/httpd-ssl.conf" \
+			> /usr/local/apache2/conf/httpd.conf
+			
+			编译加载模块方法：
+			步骤：
+				i : 下载apache模块文件[.c结尾的模块文件]
+				ii : 使用apxs编译模块文件并安装。例如：/usr/local/apache2/bin/apxs -iac xxxxxx.c
+				iii : 重新启动apache即可
+				注意：apx -iac 编辑好后，会自动在ServerRoot目录下的modules目录生成模块.so文件，
+				并自动在httpd.conf文件中加载上改模块。
+			
+			手动加载请使用：apxs -c 文件名
+		
+		c) 编辑/usr/local/apache2/conf/extra/httpd-ssl.conf文件
+			[root@centos7 ~]# vim /usr/local/apache2/conf/extra/httpd-ssl.conf
+			Listen 443														#监听端口
+			SSLCipherSuite HIGH:MEDIUM:!MD5:
+			SSLPassPhraseDialog  builtin
+			SSLSessionCache        "shmcb:/usr/local/apache2/logs/ssl_scache(512000)"	#缓存
+			SSLSessionCacheTimeout  300										#超时时间
+
+			<VirtualHost _default_:443>										#设置虚拟主机
+				DocumentRoot "/usr/local/apache2/htdocs/secret"				#设置网站根目录
+				ServerName www.abc.com:443									#设置域名及端口
+				ServerAdmin you@example.com									#设置管理员邮箱
+				ErrorLog "/usr/local/apache2/logs/error_log"				#设置错误日志
+				TransferLog "/usr/local/apache2/logs/access_log"			#设置访问日志
+				SSLEngine on												#开启SSL引擎
+				SSLCertificateFile "/usr/local/apache2/conf/server.crt"		#设置证书文件
+				SSLCertificateKeyFile "/usr/local/apache2/conf/server.key"	#设置私钥文件
+				<FilesMatch "\.(cgi|shtml|phtml|php)$">
+					SSLOptions +StdEnvVars
+				</FilesMatch>
+				<Directory "/usr/local/apache2/cgi-bin">
+					SSLOptions +StdEnvVars
+				</Directory>
+
+				BrowserMatch "MSIE [2-5]" \
+					nokeepalive ssl-unclean-shutdown \
+					downgrade-1.0 force-response-1.0
+				CustomLog "/usr/local/apache2/logs/ssl_request_log" \
+					"%t %h %{SSL_PROTOCOL}x %{SSL_CIPHER}x \"%r\" %b"
+			</VirtualHost>
+
+		d) 修改hosts文件
+			[root@centos7 ~]# sed -i "`cat /etc/hosts | wc -l`a 127.0.0.1 www.abc.com" \
+			> /etc/hosts
+			
+		e) 创建站点根目录，并创建测试文件。
+			[root@centos7 ~]# mkdir -p /usr/local/apache2/htdocs/secret
+			[root@centos7 ~]# echo "secret" > /usr/local/apache2/htdocs/secret/index.html
+			[root@centos7 ~]# /usr/local/apache2/bin/apachectl restart
+			[root@centos7 ~]# firewall-cmd --permanent --add-port=443/tcp
+			[root@centos7 ~]# firewall-cmd --reload
+			
+
+5，常见问题分析
+	a) 启动Apache HTTP Server 时提示错误信息：Invalid command 'LanguagePriority',perhaps
+misspelled pr defined by a module not include in the server configuration。
+	提示信息说明在配置文件中使用了 LanguagePriority 指令，但该指令需要加载mode_negotiation
+模块才可以实现相应的功能，解决方法是主配置文件中通过LoadModule加载该模块。
+
+	b) 启动 Apache HTTP Server 时提示错误信息：Invalid command 'SSLCipherSuite',perhaps
+	misspelled pr defined by a module not include in the server configuration。
+		该提示信息说明在配置文件中使用了 SSLCipherSuite 指令，但该指令需要mod_ssl模块才可以
+	实现相应功能。
+
+	c) 启动Apache HTTP Server 时提示错误信息：SSLSessionCache:'shmcb' session cache not supported。
+	该提示说明shmcb会话不支持缓存，需要加载mod_socache_shmcb模块才可以支持该功能。
+	
+	d) 启动Apache HTTP Server 时提示错误信息：Address already in use, could not bind to address.
+	说明服务器上已经开启了另一个程序正在监听使用该端口，使用netstat工具可以查看网络连接状况。
+	
+	e) 客户端访问时显示的不是首页内容，而是首页目录下的所有文件列表，表明通过DocumentRoot指令
+	设置的网站根目录，无法找到由DirectoryIndex指令设置的首页文件。
+	
+	f) 客户端访问加密网站时，如果数字证书是自签名证书，浏览器会提示：此网站的安全证书有问题。
+	因为我们的证书没有经过权威证书中心签名，所以浏览器会提示不安全，如果确定该证书没有问题，可以
+	继续浏览此网站。
+
+			
+
 二，安装Nignx
 
 1，Nginx软件安装
@@ -81,15 +389,15 @@ graceful-stop		关闭httpd,不中断现有的http链接请求
 zlib-devel openssl openssl-devel gcc pcre pcre-devel
 [root@centos7 ~]# cd /usr/src/nginx-1.13.6/
 [root@centos7 ~]# ./configure --prefix=/usr/local/nginx \
---with-http_ssl_module \
---with-http_realip_module \
---with-http_addition_module \
---with-http_flv_module \
---with-http_mp4_module \
---with-http_gzip_static_module \
---with-http_perl_module \
---with-mail \
---with-mail_ssl_module
+> --with-http_ssl_module \
+> --with-http_realip_module \
+> --with-http_addition_module \
+> --with-http_flv_module \
+> --with-http_mp4_module \
+> --with-http_gzip_static_module \
+> --with-http_perl_module \
+> --with-mail \
+> --with-mail_ssl_module
 [root@centos7 ~]# make && make install
 
 Nginx与Apache一样都采用的是模块化设置，Nginx模块分为内痔模块和第三方模块，其中，
@@ -593,18 +901,331 @@ http {
 
 
 三，安装Mysql
-1，下载软件包
+
+1，安装mysql软件
+1) 下载软件包
 [root@centos7 ~]# wget http://ftp.jaist.ac.jp/pub/mysql/Downloads/MySQL-5.6/mysql-5.6.38.tar.gz
 
-2，安装软件
+2) 安装mysql
 [root@centos7 ~]# yum -y install cmake ncurses-devel libxml2-devel \
 > libtool-ltdl-devel gcc-c++ bison zlib-devel gcc autoconf automake
 [root@centos7 ~]# groupadd mysql
 [root@centos7 ~]# useradd -r -s /sbin/nologin -g mysql mysql
-[root@centos7 ~]# cd /usr/src/mysql-5.6.38
+[root@centos7 ~]# cd /usr/src/mysql-5.6.38/
 [root@centos7 ~]# cmake . -DENABLE_DOWNLOADS=1
 [root@centos7 ~]# make && make install
 [root@centos7 ~]# chown -R mysql.mysql /usr/local/mysql
+
+3) 初始化数据库
+	数据库软件安装完成后，我们需要使用mysql_install_db脚本初始化数据库了，使用user定义数据库账户名称，
+使用basedir定义软件主目录，使用datadir定义数据库存放目录。初始化完成后，需要将mysql主配置文件my.cnf复制、
+一份到/etc/目录下。
+[root@centos7 ~]# /usr/local/mysql/scripts/mysql_install_db --user=mysql \
+> --basedir=/usr/local/mysql/ --datadir=/usr/local/mysql/data
+[root@centos7 ~]# cp /usr/local/mysql/my.cnf /etc/my.cnf
+
+4) 启动mysql
+	可以使用mysqld_safe进程手动启动数据库服务进程或通过软件包所提供的启动脚本mysqld.server来管理服务进程。
+[root@centos7 ~]# /usr/local/mysql/bin/mysqld_safe --user=mysql &
+[root@centos7 ~]# cp /usr/local/mysql/support-files/mysql.server /etc/init.d/mysqld
+[root@centos7 ~]# chkconfig --add mysqld
+[root@centos7 ~]# chkconfig mysqld on
+[root@centos7 ~]# PATH=$PATH:/usr/local/mysql/bin
+[root@centos7 ~]# echo "export PATH=$PATH:/usr/local/mysql/bin" >> /etc/profile
+[root@centos7 ~]# sourch /etc/profile
+
+注意：至此mysql安装已完成。使用mysql)install_db程序进行初始化的数据库，默认会创建一个用户测试的空白数据库test，
+同时初始化程序还会在mysql数据库中创建user数据库表，该数据表为MySQL数据库系统的账户及权限表，初始情况下，该表存在
+一些问题。
+	i： mysql.user 表中root为超级管理员账户，然而该账好默认没有密码，因此可能导致非法用户在没有密码的情况下
+	直接访问数据库。
+	ii: mysql.user 中默认创建了匿名账号，这些账号同样没有设置密码。
+
+	可以通过如下命令查看MySQL默认创建的user账号及密码数据
+	[root@centos7 ~]# mysql -u root -e "SELECT User,Host,Password FROM mysql.user"
+	
+为此，MySQL特别提供了一个Perl脚本程序专门解决这些问题，运行该脚本的前提是已安装了perl程序。
+运行脚本后会提示输入root密码，首次运行直接按回车键即可。之后该程序会通过一系列的提示询问是
+否为root设置密码、是否溢出匿名账户、是否禁止root账户从远程访问们是否删除test数据库、是否
+立刻加载新的数据。建议所有的提问都选择Y。
+	[root@centos7 ~]# /usr/local/mysql/bin/mysql_secure_installation
+	NOTE: RUNNING ALL PARTS OF THIS SCRIPT IS RECOMMENDED FOR ALL MySQL
+    SERVERS IN PRODUCTION USE!  PLEASE READ EACH STEP CAREFULLY!
+
+	In order to log into MySQL to secure it, we'll need the current
+	password for the root user.  If you've just installed MySQL, and
+	you haven't set the root password yet, the password will be blank,
+	so you should just press enter here.
+
+	Enter current password for root (enter for none): 
+	OK, successfully used password, moving on...
+
+	Setting the root password ensures that nobody can log into the MySQL
+	root user without the proper authorisation.
+
+	Set root password? [Y/n] Y
+	New password: 
+	Re-enter new password: 
+	Password updated successfully!
+	Reloading privilege tables..
+	 ... Success!
+
+
+	By default, a MySQL installation has an anonymous user, allowing anyone
+	to log into MySQL without having to have a user account created for
+	them.  This is intended only for testing, and to make the installation
+	go a bit smoother.  You should remove them before moving into a
+	production environment.
+
+	Remove anonymous users? [Y/n] Y
+	 ... Success!
+
+	Normally, root should only be allowed to connect from 'localhost'.  This
+	ensures that someone cannot guess at the root password from the network.
+
+	Disallow root login remotely? [Y/n] Y
+	 ... Success!
+
+	By default, MySQL comes with a database named 'test' that anyone can
+	access.  This is also intended only for testing, and should be removed
+	before moving into a production environment.
+
+	Remove test database and access to it? [Y/n] Y
+	 - Dropping test database...
+	 ... Success!
+	 - Removing privileges on test database...
+	 ... Success!
+
+	Reloading the privilege tables will ensure that all changes made so far
+	will take effect immediately.
+
+	Reload privilege tables now? [Y/n] Y
+	 ... Success!
+
+	All done!  If you've completed all of the above steps, your MySQL
+	installation should now be secure.
+
+	Thanks for using MySQL!
+
+	Cleaning up...
+
+
+2，mysqlc常用工具介绍
+1) mysql
+	语法格式：mysql [选项]
+	选项											描述
+	--help,-?									显示帮助消息
+	--auto-rehash								Tab自动补齐，默认为开启状态
+	--auto-vertical-output						自动垂直显示，如果显示的结果太宽，将以列格式显示
+	--batch,-B									不使用历史文件
+	--bind-address=ip_address					使用特定的网络接口链接MYSQL服务器
+	--compress									压缩客户端与服务器传输的所有数据
+	--database=dbname,-D dbname					指定使用的数据库名称
+	--default-character-set=charset_name		设置默认字符集
+	--delimiter=str								设置语句分隔符
+	--host=host_name,-h host_name				通过host链接到指定服务器
+	--password,-p								使用密码链接服务器
+	--pager=[command]							使用分页程序分页显示，Linux中可以使用more或less
+	--port=port_num								使用指定端口号链接服务器
+	--quick										不缓存查询结果
+	--unfuffered								每次查询后刷新缓存
+	--user=user_name,-u user_name				使用指定的账户链接服务器
+
+	例如：[root@centos7 ~]# mysql -h 192.168.0.104 -u root -p123456
+
+
+2) mysqladmin
+	mysqladmin是一个执行管理操作的工具，使用它可以检查服务器配置，当前运行状态，以及创建、删除数据库等。
+	语法格式如下：
+	mysqladmin [选项] 命令 [命令参数] [命令 [命令参数]]
+	mysqladmin支持以下这些命令（有些命令需要参数）
+	create db_name				创建名为db_name的数据库
+	debug						将debug信息写入错误日志
+	drop db_name				删除名为db_name的数据库以及数据库中的所有数据表
+	extended-status				显示服务器状态变量及变量值
+	flush-hosts					刷新所有主机的缓存信息
+	flush-logs					刷新所有的日志
+	flush-privileges			重新加载权限数据表
+	flush-status				清空状态变量
+	flush-tables				刷新所有数据表
+	kill id,id,...				杀死服务器线程
+	password new-pass			设置新的密码
+	ping						检查服务器是否可用
+	reload						重新加载权限数据表
+	refresh						刷新所有的数据表并重启日志文件
+	shutdown					关闭服务器
+	start-slave					在从服务器上启动复制
+	stop-slave					在从服务器上停止复制
+
+
+3) mysqldump
+	mysqldump是一个数据库逻辑备份程序，我们可以使用它对一个活多个MYSQL数据库进行备份或将数据库传输至
+其他Mysql服务器。执行mysqldump时需要账户用于SELECT权限才可以备份数据表，SHOW VIEW权限用于备份视图，
+TRIGGER权限用于备份触发器。mysqldump不是大数据备份的解决方案，因为mysqldump需要通过重建SQL语句来实现
+备份功能，对于数据量较大的数据库备份与还原操作，速度都比较慢。
+	对大规模数据备份与还原，使用物理备份会更加合适，通过直接复制数据文件，即可实现快速的数据还原工作。
+在企业版本的MYSQL中提供了一个mysqlbackup的工具也是可以考虑的解决方案，它提供了各种不同MYSQL数据库引擎
+高性能备份还原功能。
+	使用mysqldump可以备份数据库中的某些表数据，也可以备份整个数据库（不要在数据库后使用数据表名称），
+还可以备份MYSQL系统中的所有数据库。
+	
+	语法格式如下：
+	mysqldump [选项] db_name [table_name]
+	mysqldump [选项] --databases db_name ....
+	mysqldump [选项] --all-databases
+	
+	选项：
+	--add-drop-database						在备份文件中添加、删除相同数据库的SQL语句
+	--add-drop-table						在备份文件中添加、删除相同数据表的SQL语句
+	--add-drop-trigger						在备份文件中添加、删除相同触发器的SQL语句
+	--add-locks								在备份数据表前后添加表锁定与解锁SQL语句
+	--all-databases							备份所有数据库中的所有数据表
+	--apply-slave-statements				在CHANGE MASTER 前添加 STOP SLAVE 语句
+	--bind-address=ip_address				使用指定的网络接口链接MYSQL服务器
+	--comments								为备份文件添加注释
+	--create-options						在CRETAE TABLE 语句中包含所有的MYSQL特性
+	--databases								备份若干个指定的数据库
+	--debug									创建debugging日志
+	--default-character-set=charsename		设置默认字符集
+	--host,-h								设置需要连接的主机
+	--ignore-table							设置不需要备份的数据表，该选项可以使用多次
+	--lock-all-tables						设置全局锁，锁定所有的数据表以保证备份数据的完整性
+	--no-create-db,-n						只导出数据而不创建数据库
+	--no-create-info						只导出数据而不创建数据表
+	--no-date								不备份数据内容，用于备份表结构
+	--password,-p							使用密码连接服务器
+	--port=port_num							使用指定端口号链接服务器
+	--replace								使用REPLACE语句代替INSERT语句
+	
+	实例：
+	备份所有数据库：
+		[root@centos7 ~]# mysqldump -u root -p --all-databases > all_database_sql
+	备份mysql数据库：
+		[root@centos7 ~]# mysqldump -u root -p --database mysql > mysql_database_sql
+	备份mysql数据库下的user数据包：
+		[root@centos7 ~]# mysqldump -u root -p mysql user > user_table
+	使用all_database_sql数据库备份文件还原数据库：
+		[root@centos7 ~]# mysql -u root -p < all_database_sql
+	使用mysql_database_sql数据库备份还原数据库：
+		[root@centos7 ~]# mysql -u root -p mysql < mysql_database_sql
+	使用user_table数据备份文件还原数据表：
+		[root@centos7 ~]# mysql -u root -p mysql < user_table
+
+
+3，MYSQL 与 安全
+	常见安全策略：
+		a) 使用强密码，禁止给用户分配不必要的权限，防止SQL注入攻击。
+		b) 确保安装MYSQL时指定的数据文件、日志文件、程序文件均被存储在安全的
+		地方，未经授权的人均无法读取或写入数据
+		c) 在数据库中定义账户及相关权限设置。
+		d) 仅允许有效的主机可以连接服务器，并且需要账户权限。
+		e) 确保已经对Mysql数据库文件、配置文件、日志文件进行充分且可靠的备份。
+		
+	MYSQL数据库基于访问控制表（ACLs）进行连接、查询以及其他操作。
+	
+	MYSQL权限表如下：
+	权限								描述
+	CREATE							创建数据库、数据表、索引的权限
+	DROP							删除数据库、数据表、视图的权限
+	GRANT OPTION					允许为其他账户添加和删除权限
+	LOCK TABLES						允许用户使用LOCK TABLES语句锁定数据表
+	EVENT							执行EVENT的权限
+	ALTER							修改数据的权限
+	DELETE							删除数据记录的权限
+	INDEX							创建删除索引的权限
+	INSERT							向数据表中插入数据的权限
+	SELECT							对数据库进行数据查询的权限
+	UPDATE							更新数据记录的权限
+	CREATE TEMPORARY TABLES			创建临时表的权限
+	TRIGGER							执行触发器的权限
+	CREATE VIEW						创建视图的权限
+	SHOW VIEW						执行SHOW CREATE VIEW 的权限
+	ALTER ROUTINE					修改或删除存储过程的权限
+	CREATE ROUTINE					创建存储过程的权限
+	EXECUTE							执行存储过程或函数的权限
+	FILE							赋予读写服务器主机文件的权限
+	CREATE TABLESPACE				创建表空间的权限
+	CREATE USER						创建修改MYSQL账户的权限
+	PROCESS							显示服务器运行进程信息的权限
+	RELOAD							允许用户使用FLUSHS语句
+	REPLICATION CLIENT				允许使用SHOW MASTER STATUS 以及 SHOW SLAVE STATUS
+	REPLICATION SLAVE				允许从服务器连接当前服务器
+	SHOW DATABASES					允许使用SHOW DATABASES查看数据库信息
+	SHUTDOWN						允许用户关闭MYSQL服务
+	SUPER							允许执行关闭服务器进程之类的管理操作
+	ALL								代表所有可用的权限
+
+
+	实例：
+		1) 通过GRANT 命令创建账户并赋予权限
+			创建tomcat账户，账户仅可以通过本机连接MYSQL服务器，账户密码为pass,该账户对hr数据库
+		中的所有数据表拥有所有权限：
+			mysql> GRANT ALL ON hr.* to 'tomcat'@'localhost' IDENTIFIED BY 'pass';
+		
+			创建tomcat账户，账户仅可以从主机192.168.0.88连接到MYSQL服务器，账号密码为pass,该账户
+		对hr数据库中所有的数据表拥有查询权限：
+			mysql> GRANT SELECT ON hr.* to 'tomcat'@'192.168.0.88' IDENTIFIED BY 'pass';
+			
+			创建admin账户，赋予该账户对所有数据库的管理权限，该账户不需要密码，即可从本机链接MYSQL服务器。
+			mysql> GRANT RELOAD,PROCESS ON *.* tp 'admin'@'localhost';
+			
+			创建jacob账户，赋予jacob对hr数据库中所有数据表的所有权限，账户密码为pass，该账户可以从任何主机链接服务器。
+			mysql> GRANT ALL ON hr.* to 'jacob'@'%' IDENTIFIED BY 'pass';
+			
+			通过SHOW GRANTS 语句可以查看账户权限信息：
+			mysql> SHOW GRANTS FOR jerry@172.16.0.253
+			mysql> FLUSH PRIVILEGES;
+	
+		2) 直接修改数据库权限表mysql.user
+			更新mysql数据库下的user数据表，修改root密码为newpwd,PASSWORD()的作用用来对密码进行加密存储，最后
+		使用FLUSH PRIVILEGES更新该权限数据表。
+			mysql> UPDATE mysql.user SET Password=PASSWORD('new_password') WHERE User = 'root';
+			mysql> FLUSH PRIVILEGES;
+			
+		3) 通过mysqladmin设置账户密码
+			修改root登陆服务器的密码为centos，-p的作用时提示输入旧密码，若没有旧密码，可以忽略：
+			[root@centos7 ~]# mysqladmin -u root -p password 'centos'
+			
+		4) 通过SET PASSWORD命令设置密码
+			mysql> SET PASSWORD FOR 'root'@'localhost' = PASSWORD('newpwd');
+			mysql> SET PASSWORD FOR 'root'@'127.0.0.1' = PASSWORD('newpwd');
+			mysql> SET PASSWORD FOR 'root'@'172.16.0.22' = PASSWORD('newpwd');
+			
+		5) 使用 REVOKE 语句取消账户权限
+			撤销tomcat对hr数据库的所有权限
+			mysql> REVOKE ALL ON hr.* FROM tomcat@'%';
+			
+			撤销jacob对所有数据库的查询权限
+			mysql> REVOKE SELECT ON *.* FROM jacob@'%';
+			
+		6) DROP语句删除账户
+			mysql> DROP USER jerry@'127.16.0.253';
+
+
+
+四，安装PHP
+
+1，安装PHP软件
+
+1) 下载软件包
+
+2) 安装PHP
+
+3) 配置apache关联PHP
+
+4) 测试php文件
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

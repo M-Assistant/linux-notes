@@ -1206,15 +1206,61 @@ TRIGGER权限用于备份触发器。mysqldump不是大数据备份的解决方�
 四，安装PHP
 
 1，安装PHP软件
-
 1) 下载软件包
-
+	[root@centos7 ~]# wget http://php.net/get/php-7.1.11.tar.gz/from/this/mirror
+	[root@centos7 ~]# mv mirror php-7.1.11.tar.gz
+	
 2) 安装PHP
-
+	[root@centos7 ~]# yum -y install php-mcrypt libmcrypt libmcrypt-devel  autoconf  freetype \
+	> gd jpegsrc libmcrypt libpng libpng-devel libjpeg libxml2 libxml2-devel zlib curl curl-devel  
+	[root@centos7 ~]# tar -zxvf php-7.1.11.tar.gz -C /usr/src/
+	[root@centos7 ~]# cd /usr/src/php-7.1.11
+	[root@centos7 ~]# ./buildconf --force
+	[root@centos7 ~]# ./configure --prefix=/usr/local/php7 \
+	> --enable-mysqlnd \
+	> --with-mysqli=mysqlnd \
+	> --with-pdo-mysql=mysqlnd \
+	> --with-mysql-sock=/tmp/mysql.sock \
+	> --with-apxs2=/usr/local/apache2/bin/apxs \
+	> --with-gd \
+	> --with-curl \
+	> --with-png-dir \
+	> --with-openssl \
+	> --with-jpeg-dir \
+	> --with-libxml-dir \
+	> --with-openssl-dir \
+	> --with-freetype-dir \
+	> --enable-mbstring \
+	> --enable-fpm \
+	> --enable-soap \
+	> --enable-sockets \
+	> --enable-shared \
+	> --with-config-file-path=/usr/local/php7/etc/
+	[root@centos7 ~]# make && make install
+	[root@centos7 ~]# cp php.ini-development /usr/local/php7/etc/php.ini
+	
 3) 配置apache关联PHP
-
+	[root@centos7 ~]# vim /usr/local/apache2/conf/httpd.conf
+	.....
+	54 LoadModule php7_module        modules/libphp7.so
+	.....
+	297 <IfModule mime_module>
+	.....
+	319	AddType application/x-compress .Z
+	320 AddType application/x-gzip .gz .tgz
+	321 AddType application/x-httpd-php .php
+	.....
+	344 </IfModule>
+	.....
+	.....
+	168	<IfModule dir_module>
+	169     DirectoryIndex index.php index.html index.htm
+	170 </IfModule>
+	
+	
 4) 测试php文件
-
+	[root@centos7 ~]# echo "<?php echo phpinfo(); ?>" > /usr/local/apache2/htdocs/index.php
+	[root@centos7 ~]# firefox http://192.168.0.108
 
 
 
